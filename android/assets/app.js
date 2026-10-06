@@ -3,7 +3,8 @@
 var state={configured:false,running:false,state:'off',events:[]},lastFocus=null,currentPanel=null,wakeBusy=false,monitorTimer=null,monitorTicks=0,screenZoom=1,liveScreen=false;
 var $=function(id){return document.getElementById(id);};
 var native=window.Marlico;
-function call(method,arg){if(native&&typeof native[method]==='function'){if(arg===undefined)native[method]();else native[method](arg);}else window.notify('Prévia da interface. Esta ação funciona no aplicativo da TV Box.');}
+['update','required'].forEach(function(prefix){$(prefix+'-check').onclick=function(){call('checkUpdates');};$(prefix+'-download').onclick=function(){call('downloadUpdate');};$(prefix+'-install').onclick=function(){call('installUpdate');};});
+function call(method,arg){if(state.updateRequired&&['refresh','checkUpdates','downloadUpdate','installUpdate','stop','stopLiveScreen','cancelShutdown'].indexOf(method)<0)return;if(native&&typeof native[method]==='function'){if(arg===undefined)native[method]();else native[method](arg);}else window.notify('Prévia da interface. Esta ação funciona no aplicativo da TV Box.');}
 function icon(name){var svg=document.createElementNS('http://www.w3.org/2000/svg','svg'),use=document.createElementNS('http://www.w3.org/2000/svg','use');use.setAttribute('href','#i-'+name);svg.appendChild(use);return svg;}
 var toastTimer;
 window.notify=function(text){$('toast').textContent=text;$('toast').hidden=false;clearTimeout(toastTimer);toastTimer=setTimeout(function(){$('toast').hidden=true;},7000);};
@@ -36,6 +37,11 @@ window.screenState=function(status,message){liveScreen=status==='waiting'||statu
 window.screenStopped=function(){if(liveScreen)window.screenState('stopped','Transmissão encerrada. A última imagem não está mais ao vivo.');liveScreen=false;$('start-live-screen').disabled=false;$('stop-live-screen').disabled=true;$('capture-screen').disabled=false;$('start-live-screen').textContent='Acesso remoto';};
 function stopScreen(){call('stopLiveScreen');window.screenState('stopped','Encerrando transmissão…');$('start-live-screen').disabled=true;}
 window.renderState=function(data){state=data;var labels={off:'Bot desconectado',online:'Bot conectado',connecting:'Conectando…',retry:'Reconectando…',error:'Precisa de atenção'};
+ var wasRequired=!$('required-update').hidden;$('required-update').hidden=!data.updateRequired;document.querySelector('.app').inert=!!data.updateRequired;
+ $('update-status').textContent=data.updateStatus||'Consultando atualizações…';$('required-status').textContent=data.updateStatus||'';
+ ['update','required'].forEach(function(prefix){$(prefix+'-check').disabled=!!data.updateBusy;$(prefix+'-download').disabled=!!data.updateBusy||!data.updateAvailable;$(prefix+'-install').disabled=!!data.updateBusy||!data.updateAvailable;});
+ $('update-download').hidden=!data.updateAvailable;$('update-install').hidden=!data.updateAvailable;
+ if(data.updateRequired&&!wasRequired){if(liveScreen)stopScreen();$('required-check').focus();}
  if(data.pcState==='online'&&data.pcStateAt&&Date.now()-data.pcStateAt>120000)data.pcState='unknown';
  $('header-status').className='status-pill '+data.state;$('header-status').querySelector('span').textContent=labels[data.state]||labels.off;
  $('network').textContent=data.network||'Verificando…';$('bot-name').textContent=data.botName?'@'+data.botName:'Seu bot no Telegram';$('connection-label').textContent=data.configured?(labels[data.state]||labels.off):'Aguardando configuração';$('connection-label').title=data.detail||'';$('device-mac').textContent=(data.pcIp||'')+' · '+(data.mac||'Não configurado');

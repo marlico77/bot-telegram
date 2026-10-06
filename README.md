@@ -6,7 +6,19 @@ Projeto pessoal para ligar e monitorar um PC Windows 11 pela TV Box, aplicativo 
 
 Os instaladores serão publicados em [Releases](https://github.com/marlico77/bot-telegram/releases). Este repositório contém o código dos programas; o site de downloads fica em [Site-bot-telegram](https://github.com/marlico77/Site-bot-telegram).
 
-A versão 1.3.0 atualiza a tela ao vivo, o tema rosa e a interface para celular. Os pacotes são gerados em dist; a publicação em Releases é separada do commit de código.
+A versão 1.3.1 inclui a consulta de atualizações pelo site. Os pacotes são gerados em dist; a publicação em Releases é separada do commit de código.
+
+## Atualizações pelo aplicativo
+
+Instale a versão 1.3.1 manualmente uma vez. As versões anteriores não têm o atualizador.
+
+Depois disso, Android e Windows consultam `https://botmy.netlify.app/api/v1/update` ao iniciar e a cada seis horas enquanto estiverem rodando. O Android pode adiar a consulta quando estiver suspenso pelo sistema. Também existe um botão para verificar manualmente. O site lê os Releases públicos do repositório dos programas.
+
+Quando houver uma versão nova, o app avisa e oferece o download. O arquivo é conferido pelo tamanho e SHA-256 antes de abrir o instalador. O APK também precisa ter o mesmo pacote e assinatura do app instalado. A instalação depende da confirmação do usuário no Android ou do UAC no Windows. No Android 8 ou superior, autorize instalar apps desta fonte e volte para **Instalar download**. Se cancelar a instalação, pode tentar novamente pelo mesmo botão. Os dados de configuração são preservados.
+
+Para publicar: crie um Release com o APK, o instalador EXE e `updates.json`. Aumente o `build` de cada plataforma e mantenha os nomes e hashes do manifesto iguais aos anexos. Na versão 1.3.1, Android usa build 13 e Windows usa build 3. O campo `minimumBuild` define a menor versão permitida, por plataforma; o padrão 0 não obriga ninguém a atualizar. Para uma próxima atualização obrigatória, defina o mínimo como o build exigido, nunca maior que o build publicado. Os clientes com atualizador bloqueiam as funções de monitoramento até atualizar. Clientes anteriores à 1.3.1 não obedecem a esse campo.
+
+Uma falha de internet não cria uma obrigação de atualizar. Uma obrigação já recebida permanece guardada até instalar uma versão compatível ou receber um manifesto válido com outra política. Downloads vêm somente do repositório oficial via HTTPS. O instalador Windows continua sem assinatura Authenticode; a verificação do download não substitui a assinatura do publicador.
 
 O instalador pede confirmação do UAC e instala o agente em Arquivos de Programas. O agente roda sem elevação na sessão do usuário e inicia com o Windows, minimizado na área de notificação. Fechar a janela a oculta; o menu do ícone pode abrir o painel ou parar o agente. O painel exibe métricas, processos ativos, hardware e programas instalados. O inventário também fica disponível no painel Android e no menu do Telegram. A visualização é somente leitura, sem teclado, mouse ou shell. A função de energia permite desligar o PC após confirmação. A foto única pede autorização em cada solicitação. A tela ao vivo começa após autorizar a sessão no Windows ou ativar a permissão persistente e iniciar pelo app; o ícone indica quando está ativa e permite parar localmente.
 

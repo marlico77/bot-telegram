@@ -22,7 +22,7 @@ function Check-Step([string]$name) { if ($LASTEXITCODE -ne 0) { throw "Falha: $n
 Check-Step 'compilação dos recursos'
 & "$bt\aapt2.exe" link -o 'android/build/unsigned.apk' -I '.tools/platform/android-35/android.jar' --manifest 'android/AndroidManifest.xml' --java 'android/build/gen' -A 'android/assets' --auto-add-overlay 'android/build/resources.zip'
 Check-Step 'empacotamento dos recursos'
-$sources = @((Get-ChildItem "$project\src","$build\gen" -Filter '*.java' -Recurse).FullName)
+$sources = @((Get-ChildItem "$project\src","$build\gen","$root\shared\src" -Filter '*.java' -Recurse).FullName)
 & "$jdk\bin\javac.exe" -encoding UTF-8 --release 8 -classpath $platform -d "$build\classes" @sources
 Check-Step 'compilação Java'
 if (-not $SkipChecks) {

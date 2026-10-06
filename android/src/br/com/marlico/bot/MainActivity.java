@@ -27,6 +27,7 @@ public final class MainActivity extends Activity {
     private final Runnable ticker=new Runnable(){public void run(){emitState();handler.postDelayed(this,2000);}};
     @Override public void onCreate(Bundle b) {
         super.onCreate(b);
+        AppUpdates.start(this);
         UiModeManager mode=(UiModeManager)getSystemService(UI_MODE_SERVICE);if(mode!=null&&mode.getCurrentModeType()==android.content.res.Configuration.UI_MODE_TYPE_TELEVISION)getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_FULLSCREEN|View.SYSTEM_UI_FLAG_HIDE_NAVIGATION|View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY);
         web=new WebView(this);web.setBackgroundColor(0xff0c1017);setContentView(web);
         WebSettings s=web.getSettings();s.setJavaScriptEnabled(true);s.setDomStorageEnabled(false);s.setAllowFileAccess(false);s.setAllowContentAccess(false);s.setMixedContentMode(WebSettings.MIXED_CONTENT_NEVER_ALLOW);s.setMediaPlaybackRequiresUserGesture(true);s.setTextZoom(100);
@@ -63,6 +64,7 @@ public final class MainActivity extends Activity {
             if(!active&&!state.equals("error"))state="off";
             JSONObject data=cfg.publicJson().put("state",state).put("running",active).put("detail",p.getString("detail","Importe seu .env para começar.")).put("botName",p.getString("botName","")).put("wakeCount",p.getInt("wakeCount",0)).put("lastWake",p.getLong("lastWake",0)).put("events",new JSONArray(p.getString("events","[]")));
             data.put("pcState",p.getString("pcState","unknown")).put("pcStateAt",p.getLong("pcStateAt",0));
+            data.put("updateStatus",AppUpdates.status(this)).put("updateRequired",AppUpdates.required(this)).put("updateAvailable",AppUpdates.available()).put("updateBusy",AppUpdates.busy());
             ConnectivityManager cm=(ConnectivityManager)getSystemService(CONNECTIVITY_SERVICE);NetworkInfo info=cm.getActiveNetworkInfo();
             data.put("network",info!=null&&info.isConnected()?(info.getType()==ConnectivityManager.TYPE_ETHERNET?"Cabo conectado":"Rede conectada"):"Sem rede");
             PowerManager pm=(PowerManager)getSystemService(POWER_SERVICE);data.put("batteryFree",pm.isIgnoringBatteryOptimizations(getPackageName()));
@@ -76,6 +78,9 @@ public final class MainActivity extends Activity {
         }catch(Exception e){toast("Não foi possível iniciar. Confira as configurações do bot.");}
     }
     public final class Bridge {
+        @JavascriptInterface public void checkUpdates(){AppUpdates.check(MainActivity.this,true);}
+        @JavascriptInterface public void downloadUpdate(){runOnUiThread(()->AppUpdates.action(MainActivity.this));}
+        @JavascriptInterface public void installUpdate(){runOnUiThread(()->AppUpdates.installDownloaded(MainActivity.this));}
         @JavascriptInterface public void refresh(){runOnUiThread(()->emitState());}
         @JavascriptInterface public void connect(){runOnUiThread(()->startBot());}
         @JavascriptInterface public void stop(){runOnUiThread(()->{BotService.shutdown(MainActivity.this);emitState();toast("Bot pausado.");});}

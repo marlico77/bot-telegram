@@ -17,6 +17,10 @@ if (-not $isAdmin) {
     $elevationArgs = @('-NoLogo','-NoProfile','-ExecutionPolicy','Bypass','-File',('"{0}"' -f $PSCommandPath),'-Elevated','-TargetAppData',('"{0}"' -f $appData))
     try {
         $child = Start-Process -FilePath 'powershell.exe' -Verb RunAs -ArgumentList $elevationArgs -PassThru -Wait
+        if ($child.ExitCode -eq 0) {
+            $installedAgent = Join-Path $env:ProgramFiles 'MarlicoBotPC\MarlicoBotPC.exe'
+            if (Test-Path -LiteralPath $installedAgent) { Start-Process -FilePath $installedAgent -WindowStyle Hidden }
+        }
         exit $child.ExitCode
     } catch {
         [System.Windows.Forms.MessageBox]::Show('A instalação precisa de permissão de administrador. Ela foi cancelada ou não foi autorizada.','MarlicoBot PC','OK','Warning') | Out-Null
@@ -27,7 +31,7 @@ if (-not $isAdmin) {
 $choice = [System.Windows.Forms.MessageBox]::Show(
     "Instalar o MarlicoBot PC para este computador?`r`n`r`nO instalador solicitará elevação pelo UAC, instalará o programa em Arquivos de Programas e criará atalhos. O agente será iniciado na sessão do usuário, sem privilégios administrativos. A captura de tela continua exigindo confirmação visível no PC.",
     'Instalar MarlicoBot PC', 'YesNo', 'Question')
-if ($choice -ne [System.Windows.Forms.DialogResult]::Yes) { exit 0 }
+if ($choice -ne [System.Windows.Forms.DialogResult]::Yes) { exit 2 }
 
 $appData = [IO.Path]::GetFullPath($TargetAppData)
 if (-not $appData.EndsWith('\AppData\Roaming', [StringComparison]::OrdinalIgnoreCase)) { throw 'Perfil de instalação inválido.' }
@@ -58,7 +62,7 @@ foreach ($shortcutPath in @((Join-Path $startMenu 'MarlicoBot PC.lnk'),(Join-Pat
 $uninstallKey = 'HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\MarlicoBotPC'
 New-Item -Path $uninstallKey -Force | Out-Null
 New-ItemProperty -Path $uninstallKey -Name DisplayName -Value 'MarlicoBot PC' -PropertyType String -Force | Out-Null
-New-ItemProperty -Path $uninstallKey -Name DisplayVersion -Value '1.3.0' -PropertyType String -Force | Out-Null
+New-ItemProperty -Path $uninstallKey -Name DisplayVersion -Value '1.3.1' -PropertyType String -Force | Out-Null
 New-ItemProperty -Path $uninstallKey -Name Publisher -Value 'Marlico' -PropertyType String -Force | Out-Null
 New-ItemProperty -Path $uninstallKey -Name InstallLocation -Value $installRoot -PropertyType String -Force | Out-Null
 New-ItemProperty -Path $uninstallKey -Name UninstallString -Value ('powershell.exe -NoProfile -ExecutionPolicy Bypass -File "' + (Join-Path $installRoot 'Uninstall.ps1') + '"') -PropertyType String -Force | Out-Null

@@ -23,3 +23,7 @@ main{margin-left:max(15.9%,150px);padding:4.3vh 3.25vw 2vh;width:100%;min-width:
 @media(max-width:370px){.hero{padding:18px}.hero h2{font-size:2rem}.nav-item{font-size:9px}.form-grid.monitor-grid{grid-template-columns:1fr}.device-summary strong{font-size:.86rem}}
 @media(max-height:520px) and (max-width:950px){.panel{max-height:100vh;height:100vh}.panel-body{overflow:auto}.hero{height:auto;min-height:250px}.screen-view{max-height:70vh}}
 
+
+.updates-card{border:1px solid #70305e;border-radius:16px;background:#211322;padding:16px;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;gap:16px}.updates-card p{font-size:.85rem;color:var(--muted);margin-top:6px;overflow-wrap:anywhere}.update-actions{display:flex;gap:10px;flex-wrap:wrap;flex-shrink:0}.required-update{position:fixed;inset:0;z-index:10000;background:#0c1017f7;display:grid;place-items:center;padding:20px;overflow:auto}.required-update .updates-card{width:100%;max-width:600px;display:flex;flex-direction:column;align-items:stretch}.required-update h2{color:var(--accent)}@media(max-width:760px){.updates-card{flex-direction:column;align-items:stretch}.update-actions{flex-wrap:wrap}.update-actions button{flex:1;min-height:44px}}
+
+.updates-card{flex-wrap:wrap}.update-actions{max-width:100%;flex-shrink:1}

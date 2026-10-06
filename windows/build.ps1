@@ -17,7 +17,8 @@ $installerScripts = Join-Path $project 'installer'
 $ico = Join-Path $build 'marlicobot.ico'
 if (-not (Test-Path (Join-Path $jdk 'bin\jpackage.exe'))) { throw 'JDK 17 com jpackage não encontrado em .tools/jdk.' }
 New-Item -ItemType Directory -Force $classes,$inputDir,(Split-Path $zip -Parent) | Out-Null
-& (Join-Path $jdk 'bin\javac.exe') -encoding UTF-8 --release 17 --add-modules jdk.httpserver -d $classes (Join-Path $project 'src\br\com\marlico\agent\Agent.java')
+$sources = @((Get-ChildItem "$project\src","$root\shared\src" -Filter '*.java' -Recurse).FullName)
+& (Join-Path $jdk 'bin\javac.exe') -encoding UTF-8 --release 17 --add-modules jdk.httpserver -d $classes @sources
 if ($LASTEXITCODE -ne 0) { throw 'Falha ao compilar o agente Windows.' }
 if (-not $SkipChecks) {
     & (Join-Path $jdk 'bin\java.exe') --add-modules jdk.httpserver -cp $classes br.com.marlico.agent.Agent --inventory-check
@@ -31,7 +32,7 @@ if (-not $SkipChecks) {
     if ($LASTEXITCODE -ne 0) { throw 'Falha nas verificações locais da API do agente Windows.' }
 }
 if (Test-Path $runtime) { Remove-Item -LiteralPath $runtime -Recurse -Force }
-& (Join-Path $jdk 'bin\jlink.exe') --add-modules java.desktop,java.management,jdk.management,jdk.httpserver --strip-debug --no-header-files --no-man-pages --compress=2 --output $runtime
+& (Join-Path $jdk 'bin\jlink.exe') --add-modules java.desktop,java.management,jdk.management,jdk.httpserver,jdk.crypto.ec --strip-debug --no-header-files --no-man-pages --compress=2 --output $runtime
 if ($LASTEXITCODE -ne 0) { throw 'Falha ao preparar o runtime do Windows.' }
 Add-Type -AssemblyName System.Drawing
 $logo = [Drawing.Image]::FromFile((Join-Path $project 'assets\marlicobot-logo.png'))
@@ -47,7 +48,7 @@ if (Test-Path $appImage) {
     if (-not $resolved.StartsWith($rootResolved,[StringComparison]::OrdinalIgnoreCase)) { throw 'Destino de build fora da pasta do projeto.' }
     Remove-Item -LiteralPath $resolved -Recurse -Force
 }
-& (Join-Path $jdk 'bin\jpackage.exe') --type app-image --name MarlicoBotPC --app-version 1.3.0 --description 'Painel local de hardware e software para MarlicoBot' --vendor Marlico --icon $ico --input $inputDir --main-jar MarlicoBotPC.jar --main-class br.com.marlico.agent.Agent --runtime-image $runtime --dest (Split-Path $appImage -Parent)
+& (Join-Path $jdk 'bin\jpackage.exe') --type app-image --name MarlicoBotPC --app-version 1.3.1 --description 'Painel local de hardware e software para MarlicoBot' --vendor Marlico --icon $ico --input $inputDir --main-jar MarlicoBotPC.jar --main-class br.com.marlico.agent.Agent --runtime-image $runtime --dest (Split-Path $appImage -Parent)
 if ($LASTEXITCODE -ne 0) { throw 'Falha ao empacotar o aplicativo Windows.' }
 Copy-Item -LiteralPath (Join-Path $project 'LEIA-ME.txt') -Destination (Join-Path $appImage 'LEIA-ME.txt') -Force
 Copy-Item -LiteralPath (Join-Path $installerScripts 'Uninstall.ps1') -Destination (Join-Path $appImage 'Uninstall.ps1') -Force

@@ -38,6 +38,7 @@ public final class BotService extends Service {
 
     public static boolean running() { BotService s=instance;return s!=null&&s.alive; }
     public static void start(Context c) {
+        if(AppUpdates.required(c))throw new IllegalArgumentException("Atualize o MarlicoBot antes de conectar.");
         if(!Config.load(c).ready()) throw new IllegalArgumentException("Importe seu .env antes de conectar.");
         Config.prefs(c).edit().putBoolean("enabled",true).apply();
         Intent i=new Intent(c,BotService.class);
@@ -83,6 +84,7 @@ public final class BotService extends Service {
     }
     @Override public void onCreate() {
         super.onCreate();instance=this;
+        AppUpdates.start(this);
         if(Build.VERSION.SDK_INT>=26){NotificationChannel channel=new NotificationChannel(CHANNEL,"Conexão com o Telegram",NotificationManager.IMPORTANCE_LOW);channel.setDescription("Mantém o bot disponível para receber seus comandos.");((NotificationManager)getSystemService(NOTIFICATION_SERVICE)).createNotificationChannel(channel);}
     }
     @Override public int onStartCommand(Intent intent,int flags,int id) {
@@ -106,6 +108,7 @@ public final class BotService extends Service {
         try {
             while(alive) {
                 try {
+                    if(AppUpdates.required(this)){report("error","Atualização obrigatória: abra o aplicativo para instalar.");Thread.sleep(5000);continue;}
                     advanceCheck();
                     if(!initialized) {
                         report("connecting","Conectando ao Telegram…");

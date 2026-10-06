@@ -1,4 +1,4 @@
-const {chromium}=require('C:/Users/Marlon/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright');
+const {chromium}=require('playwright');
 const path=require('path');
 const {pathToFileURL}=require('url');
 const fs=require('fs');
@@ -8,7 +8,7 @@ const fs=require('fs');
  const errors=[];page.on('pageerror',e=>errors.push(e.message));
  await page.addInitScript(()=>{window.calls=[];window.Marlico={refresh(){},connect(){window.calls.push('connect')},stop(){window.calls.push('stop')},importEnv(){window.calls.push('importEnv')},battery(){window.calls.push('battery')},save(v){window.calls.push('save')},wake(){window.calls.push('wake')},monitor(){window.calls.push('monitor')},processes(){window.calls.push('processes')},inventory(){window.calls.push('inventory')},screen(){window.calls.push('screen')}};});
  await page.goto(pathToFileURL(path.resolve(__dirname,'../assets/index.html')).href);
- const base={configured:true,hasToken:true,users:'8703897768',mac:'00:E2:69:7C:B1:AA',broadcast:'255.255.255.255',port:9,autoStart:true,state:'online',running:true,network:'Cabo conectado',botName:'MarlicoBot',events:[{kind:'good',text:'Sinal para ligar o PC enviado · Telegram',time:Date.now()},{kind:'good',text:'Telegram conectado. Pronto para receber comandos.',time:Date.now()-300000},{kind:'info',text:'Configurações atualizadas.',time:Date.now()-360000}]};
+ const base={configured:true,hasToken:true,displayName:'Alex',users:'1234567890',mac:'02:11:22:33:44:55',pcIp:'192.168.1.50',broadcast:'255.255.255.255',port:9,autoStart:true,state:'online',running:true,network:'Cabo conectado',botName:'MeuBot',events:[{kind:'good',text:'Sinal para ligar o PC enviado · Telegram',time:Date.now()},{kind:'good',text:'Telegram conectado. Pronto para receber comandos.',time:Date.now()-300000},{kind:'info',text:'Configurações atualizadas.',time:Date.now()-360000}]};
  const dir=path.resolve(__dirname,'../../dist');fs.mkdirSync(dir,{recursive:true});
  for(const size of [[1280,720],[960,540],[1920,1080]]){
   await page.setViewportSize({width:size[0],height:size[1]});await page.evaluate(s=>window.renderState(s),base);

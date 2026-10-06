@@ -35,15 +35,15 @@
  <div class="side-bottom">
   <button class="nav-item" data-panel="help"><svg><use href="#i-help"/></svg>Como usar</button>
   <div class="profile"><img src="avatar.png" alt="Avatar do MarlicoBot"/><div>MarlicoBot<small>Seu assistente pessoal</small></div></div>
-  <div class="version">ANDROID EDITION <span>1.3.1</span></div>
+  <div class="version">ANDROID EDITION <span>1.3.2</span></div>
  </div>
 </aside>
 <main>
  <section class="updates-card" aria-label="Atualizações oficiais">
-  <div><strong>MarlicoBot 1.3.1</strong><p id="update-status" role="status">Consultando atualizações…</p></div>
+  <div><strong>MarlicoBot 1.3.2</strong><p id="update-status" role="status">Consultando atualizações…</p></div>
   <div class="update-actions"><button class="secondary" id="update-check">Verificar</button><button class="primary" id="update-download" hidden>Baixar atualização</button><button class="secondary" id="update-install" hidden>Instalar download</button></div>
  </section>
- <header><div><span class="eyebrow">SEU COMPUTADOR, CONECTADO</span><h1>Bem-vindo, Marlon<span>.</span></h1></div><div class="status-pill" id="header-status"><i></i><span>Bot desconectado</span></div></header>
+ <header><div><span class="eyebrow">SEU COMPUTADOR, CONECTADO</span><h1 id="welcome-title">Bem-vindo<span>.</span></h1></div><div class="status-pill" id="header-status"><i></i><span>Bot desconectado</span></div></header>
  <section class="dashboard" aria-label="Painel do bot">
  <div class="hero">
   <div class="hero-copy"><div class="hero-label"><span class="tiny-square"></span> SEU PC. ONDE VOCÊ ESTIVER.</div>
@@ -59,11 +59,11 @@
   <div class="divider"></div>
   <div class="detail-row"><span>Rede da TV Box</span><strong id="network">Verificando…</strong></div>
   <div class="detail-row"><span>Estado do PC</span><strong id="pc-state">Ainda não verificado</strong></div>
-  <button class="text-button" id="connection-action"><span>Importar configuração .env</span><svg><use href="#i-arrow"/></svg></button>
+  <button class="text-button" id="connection-action"><span>Configurar bot</span><svg><use href="#i-arrow"/></svg></button>
  </section>
  </section>
  <div class="bottom-grid">
-  <section class="device-card"><div class="card-heading"><h3>Seu computador</h3><span class="small-tag">REDE LOCAL</span></div><div class="device-info"><div class="device-icon"><svg><use href="#i-pc"/></svg></div><div><strong>PC do Marlon</strong><span id="device-mac">00:E2:69:7C:B1:AA</span></div></div><p id="pc-probe-note">Depois de enviar o sinal, o app verifica se o IP do PC responde.</p></section>
+  <section class="device-card"><div class="card-heading"><h3>Seu computador</h3><span class="small-tag">REDE LOCAL</span></div><div class="device-info"><div class="device-icon"><svg><use href="#i-pc"/></svg></div><div><strong>Seu PC</strong><span id="device-mac">Configure o IP e o MAC</span></div></div><p id="pc-probe-note">Depois de enviar o sinal, o app verifica se o IP do PC responde.</p></section>
   <section class="activity-card"><div class="card-heading"><h3>Últimas atividades</h3><button class="mini-button" data-panel="activity">Ver todas <svg><use href="#i-arrow"/></svg></button></div><div id="recent-events" class="recent-events"><div class="empty-state"><svg><use href="#i-clock"/></svg><span>Seu histórico começa por aqui.<small>Conecte o bot para receber comandos.</small></span></div></div></section>
  </div>
  <footer><span><i></i> Uma mensagem. Seu PC ligado.</span><span>Use as setas do controle para navegar <kbd>OK</kbd> selecionar</span></footer>
@@ -77,6 +77,7 @@
    <div class="form-divider"><span>ou configure os dados abaixo</span></div>
   <form id="config-form">
    <label class="full">Token do Telegram<input id="token" type="password" autocomplete="new-password" placeholder="Cole o token do BotFather" spellcheck="false"><small id="token-hint">O token fica protegido neste dispositivo.</small></label>
+   <label class="full">Nome para saudação (opcional)<input id="displayName" maxlength="40" autocomplete="off" placeholder="Como o bot deve chamar você" spellcheck="false"><small>Se ficar vazio, o bot usa uma saudação sem nome.</small></label>
    <div class="form-grid"><label>Seu ID no Telegram<input id="users" inputmode="numeric" autocomplete="off" spellcheck="false"></label><label>MAC do computador<input id="mac" autocomplete="off" spellcheck="false"></label><label>IP do computador<input id="pcIp" inputmode="decimal" autocomplete="off" spellcheck="false"><small>Use o IP local do Windows na mesma rede.</small></label><label>Porta para verificar o PC<input id="pcCheckPort" type="number" min="1" max="65535" inputmode="numeric"><small>Windows: 445 (compartilhamento de arquivos)</small></label><label>Broadcast da rede<input id="broadcast" inputmode="decimal" autocomplete="off"></label><label>Porta Wake-on-LAN<input id="port" type="number" min="1" max="65535" inputmode="numeric"></label><label>Porta do agente Windows<input id="agentPort" type="number" min="1" max="65535" inputmode="numeric"><small>Padrão: 8765</small></label></div>
    <label class="switch-row"><span><strong>Iniciar com a TV Box</strong><small>Retoma o bot após reiniciar, se ele estava conectado.</small></span><input type="checkbox" id="auto-start" checked><span class="toggle"></span></label>
    <div class="settings-note"><svg><use href="#i-help"/></svg><p>O pareamento é feito pela rede local. Ao iniciar, confirme o pedido na tela do computador. A importação acima continua servindo para carregar o .env do Telegram.</p></div>
@@ -100,9 +101,9 @@
   </div>
  </div>
  <div id="help-panel" class="panel-body" hidden>
-  <div class="help-step"><b>01</b><div><h3>Traga sua configuração</h3><p>Nas configurações, toque em “Importar do pendrive” e selecione o arquivo .env. Se ele estiver oculto no seletor, ative “Mostrar arquivos ocultos”.</p></div></div>
-  <div class="help-step"><b>02</b><div><h3>Conecte seu bot</h3><p>Pare o bot antigo no Termux com Ctrl+C e toque em “Conectar bot” neste aplicativo. Se solicitado, permita as notificações.</p></div></div>
-  <div class="help-step"><b>03</b><div><h3>Abra o Telegram e diga olá</h3><p>Envie qualquer mensagem ao seu bot. Ele vai cumprimentar Marlon de acordo com o horário de Brasília. Toque em “Menu” e depois em “Ligar PC”.</p></div></div>
+  <div class="help-step"><b>01</b><div><h3>Preencha seus dados</h3><p>Em Configurações, informe o token do seu bot, seu ID numérico do Telegram, o MAC e o IP local do PC. O nome da saudação é opcional. Se você já tem um arquivo .env, também pode importá-lo.</p></div></div>
+  <div class="help-step"><b>02</b><div><h3>Conecte seu bot</h3><p>Na TV Box, toque em “Conectar bot” e permita as notificações. Mantenha só uma instalação conectada ao mesmo bot; no celular, use o painel sem iniciar outra sessão do Telegram.</p></div></div>
+  <div class="help-step"><b>03</b><div><h3>Abra o Telegram e diga olá</h3><p>Envie qualquer mensagem ao seu bot. Ele vai usar o nome que você configurou, conforme o horário de Brasília. Toque em “Menu” e depois em “Ligar PC”.</p></div></div>
   <div class="help-step"><b>04</b><div><h3>Confirme o PC e deixe a Box disponível</h3><p>Depois do sinal, o app espera até 45 segundos por resposta ao ping ou ao teste TCP configurado. Se ambos estiverem bloqueados, ele não afirma que o PC ligou. Permita o ping ou essa porta no firewall do PC. Mantenha a Box ligada, na mesma rede, e permita o app em segundo plano.</p></div></div>
   <div class="settings-note"><svg><use href="#i-pc"/></svg><p>Wake-on-LAN precisa estar habilitado no PC. “Ligado e respondendo” confirma uma resposta de rede naquele IP; firewall ou isolamento da rede podem impedir a confirmação.</p></div>
  </div>

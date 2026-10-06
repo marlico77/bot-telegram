@@ -8,7 +8,7 @@ INÍCIO
 5. Clique em “Permitir conexão da rede local” e aceite o UAC do Windows.
 6. No MarlicoBot Android, abra Monitorar PC → Parear pela rede local.
 7. Aprove o pedido de pareamento que aparecerá na tela do Windows. Não é necessário exportar nem transferir arquivo de pareamento.
-7. Para captura de tela, peça “Ver tela” no menu do Telegram e aprove cada pedido na confirmação visível neste computador.
+8. Para uma foto da tela, peça “Print da tela” no Telegram e aprove cada pedido na confirmação visível neste computador.
 
 O instalador não está assinado por um publicador verificado. O UAC é separado do Microsoft Defender SmartScreen e não remove avisos de reputação. Não desative a proteção do Windows para instalar.
 
@@ -23,7 +23,7 @@ PRIVACIDADE
 - O inventário lista os aplicativos clássicos registrados pelo Windows; números de série não são coletados.
 - Desinstale em Configurações do Windows → Aplicativos instalados → MarlicoBot PC. As preferências de pareamento permanecem em AppData.
 
-VERSÃO 1.3.0
+VERSÃO 1.3.2
 Acesso remoto: visualização da tela, sem controle de mouse ou teclado. Autorize no PC ou ative a permissão contínua. Use o botão Parar para encerrar.
 Desligamento: solicite no aplicativo ou /desligar no Telegram. Para cancelar, use /cancelar_desligamento ou o botão na aba Privacidade e conexão.
 

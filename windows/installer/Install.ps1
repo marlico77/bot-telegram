@@ -62,7 +62,7 @@ foreach ($shortcutPath in @((Join-Path $startMenu 'MarlicoBot PC.lnk'),(Join-Pat
 $uninstallKey = 'HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\MarlicoBotPC'
 New-Item -Path $uninstallKey -Force | Out-Null
 New-ItemProperty -Path $uninstallKey -Name DisplayName -Value 'MarlicoBot PC' -PropertyType String -Force | Out-Null
-New-ItemProperty -Path $uninstallKey -Name DisplayVersion -Value '1.3.1' -PropertyType String -Force | Out-Null
+New-ItemProperty -Path $uninstallKey -Name DisplayVersion -Value '1.3.2' -PropertyType String -Force | Out-Null
 New-ItemProperty -Path $uninstallKey -Name Publisher -Value 'Marlico' -PropertyType String -Force | Out-Null
 New-ItemProperty -Path $uninstallKey -Name InstallLocation -Value $installRoot -PropertyType String -Force | Out-Null
 New-ItemProperty -Path $uninstallKey -Name UninstallString -Value ('powershell.exe -NoProfile -ExecutionPolicy Bypass -File "' + (Join-Path $installRoot 'Uninstall.ps1') + '"') -PropertyType String -Force | Out-Null

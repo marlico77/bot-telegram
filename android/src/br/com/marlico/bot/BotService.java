@@ -213,14 +213,14 @@ public final class BotService extends Service {
             if(action==Conversation.Action.GREETING)answer.put("text","Menu atualizado. Toque em Menu para continuar.");
             api.call("answerCallbackQuery",answer);
             long messageId=message.optLong("message_id",0);
-            if(action==Conversation.Action.MENU)reply(chatId,messageId,"Escolha uma opção, Marlon:",nonce,Conversation.Action.MENU);
+            if(action==Conversation.Action.MENU)reply(chatId,messageId,Conversation.menu(cfg.displayName),nonce,Conversation.Action.MENU);
             else if(action==Conversation.Action.WAKE){if(AgentApi.isOnline(cfg))reply(chatId,messageId,"✅ Computador ligado. Não é necessário enviar o sinal de ligar.",nonce,Conversation.Action.GREETING);else wakeAndReply(chatId,messageId,cfg,nonce);}
             else if(action==Conversation.Action.STATUS)showStatus(chatId,messageId,nonce);
             else if(action==Conversation.Action.PROGRAMS)showPrograms(chatId,messageId,nonce);
             else if(action==Conversation.Action.SCREEN)showScreen(chatId,messageId,nonce);
             else if(action==Conversation.Action.INVENTORY)showInventory(chatId,messageId,nonce);
             else if(action==Conversation.Action.SHUTDOWN)preparePower(chatId,nonce);
-            else reply(chatId,messageId,Conversation.greeting(System.currentTimeMillis()),nonce,Conversation.Action.GREETING);
+            else reply(chatId,messageId,Conversation.greeting(System.currentTimeMillis(),cfg.displayName),nonce,Conversation.Action.GREETING);
         } else {
             String text=message==null?"":message.optString("text","").trim();String command=text.isEmpty()?"":text.split("\\s+",2)[0].toLowerCase(Locale.ROOT).replaceFirst("@[^@]+$","");
             if(command.equals("/metricas")||command.equals("/métricas")||command.equals("/status"))showStatus(chatId,0,nonce);
@@ -229,7 +229,7 @@ public final class BotService extends Service {
             else if(command.equals("/desligar"))preparePower(chatId,nonce);
             else if(command.equals("/cancelar_desligamento"))cancelPower(chatId,nonce);
             else if(command.equals("/ligar")||command.equals("/wake")){if(AgentApi.isOnline(cfg))reply(chatId,0,"✅ Computador ligado. Não é necessário enviar o sinal de ligar.",nonce,Conversation.Action.GREETING);else wakeAndReply(chatId,0,cfg,nonce);}
-            else reply(chatId,0,Conversation.greeting(System.currentTimeMillis()),nonce,Conversation.Action.GREETING);
+            else reply(chatId,0,Conversation.greeting(System.currentTimeMillis(),cfg.displayName),nonce,Conversation.Action.GREETING);
         }
     }
     private void preparePower(long chat,String nonce){try{

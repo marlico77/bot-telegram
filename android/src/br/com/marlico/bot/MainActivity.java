@@ -94,7 +94,7 @@ public final class MainActivity extends Activity {
                 JSONObject o=new JSONObject(json);Config old=Config.load(MainActivity.this);
                 String t=o.optString("token","").trim();if(t.isEmpty())t=old.token;
                 String agent=o.optString("agentToken","").trim();if(agent.isEmpty())agent=old.agentToken;
-                Config next=new Config(t,agent,o.optString("users"),o.optString("mac"),o.optString("broadcast"),Core.port(o.optString("port")),Core.hostIpv4(o.optString("pcIp")),Core.port(o.optString("pcCheckPort")),Core.port(o.optString("agentPort")),o.optBoolean("autoStart",true)).validated();
+                Config next=new Config(t,agent,o.optString("users"),o.optString("mac"),o.optString("broadcast"),Core.port(o.optString("port")),Core.hostIpv4(o.optString("pcIp")),Core.port(o.optString("pcCheckPort")),Core.port(o.optString("agentPort")),o.optBoolean("autoStart",true),o.optString("displayName",old.displayName)).validated();
                 applyConfig(next);
             }catch(IllegalArgumentException e){toast(e.getMessage());}catch(Exception e){toast("Não foi possível salvar. Confira os dados e tente novamente.");}
         });}

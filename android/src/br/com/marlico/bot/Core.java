@@ -10,7 +10,7 @@ public final class Core {
     public static String mac(String value) {
         String raw = value.trim();
         if (!raw.matches("(?i)([0-9a-f]{2}:){5}[0-9a-f]{2}|([0-9a-f]{2}-){5}[0-9a-f]{2}|[0-9a-f]{12}|([0-9a-f]{4}\\.){2}[0-9a-f]{4}"))
-            throw new IllegalArgumentException("MAC inválido. Use 00:E2:69:7C:B1:AA.");
+            throw new IllegalArgumentException("MAC inválido. Use o endereço da placa de rede do seu PC, no formato AA:BB:CC:DD:EE:FF.");
         String hex = raw.replace(":", "").replace("-", "").replace(".", "").toUpperCase(Locale.ROOT);
         if (hex.equals("000000000000") || (Integer.parseInt(hex.substring(0, 2), 16) & 1) != 0)
             throw new IllegalArgumentException("Informe o MAC de uma placa de rede do PC.");

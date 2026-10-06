@@ -8,14 +8,18 @@ public final class Conversation {
     public enum Action { GREETING, MENU, WAKE, STATUS, PROGRAMS, SCREEN, INVENTORY, SHUTDOWN }
     private Conversation() {}
 
-    public static String greeting(long epochMillis) {
+    public static String greeting(long epochMillis) { return greeting(epochMillis,""); }
+    public static String greeting(long epochMillis,String displayName) {
         Calendar clock=Calendar.getInstance(TimeZone.getTimeZone("America/Sao_Paulo"));
         clock.setTimeInMillis(epochMillis);
         int minute=clock.get(Calendar.HOUR_OF_DAY)*60+clock.get(Calendar.MINUTE);
         // The whole 05:00 minute belongs to the night; morning starts at 05:01.
         String salutation=minute<=300||minute>=1080?"Boa noite":minute<720?"Bom dia":"Boa tarde";
-        return salutation+", Marlon! O que deseja?";
+        return salutation+nameSuffix(displayName)+"! O que deseja?";
     }
+
+    public static String menu(String displayName) { return "Escolha uma opção"+nameSuffix(displayName)+":"; }
+    private static String nameSuffix(String name) { return name==null||name.trim().isEmpty()?"":", "+name.trim(); }
 
     public static Action action(String callbackData,String session) {
         if(session==null||session.isEmpty())return Action.GREETING;

@@ -4,7 +4,7 @@ Aplicativo Android para TV Box e celular. Recebe comandos do Telegram na TV Box,
 
 ## Instalação
 
-1. Copie `dist/MarlicoBot-1.3.0.apk` para o pendrive. Instale por cima da versão anterior sem desinstalá-la, para manter as configurações.
+1. Copie `dist/MarlicoBot-1.3.2.apk` para o pendrive. Instale por cima da versão anterior sem desinstalá-la, para manter as configurações.
 2. Na TV Box, abra o APK com o gerenciador de arquivos e permita a instalação por essa fonte se o Android solicitar.
 3. Se ainda não configurou o bot, importe o `.env` já usado. Para parear com o PC, abra **Monitorar PC → Parear pela rede local** e aprove o pedido na tela do Windows.
 4. Pare o bot antigo no Termux com **Ctrl+C** e encerre qualquer cópia no PC.
@@ -92,19 +92,19 @@ A versão 1.0.1 reduz o mínimo de API 26 para API 23, recompila o DEX para esse
 
 ## Conversa no Telegram — versão 1.0.3
 
-- 05h01–11h59: “Bom dia, Marlon! O que deseja?”
-- 12h00–17h59: “Boa tarde, Marlon! O que deseja?”
-- 18h00–05h00, incluindo o minuto 05h00 inteiro: “Boa noite, Marlon! O que deseja?”
+- 05h01–11h59: “Bom dia! O que deseja?”
+- 12h00–17h59: “Boa tarde! O que deseja?”
+- 18h00–05h00, incluindo o minuto 05h00 inteiro: “Boa noite! O que deseja?”
 
-Abaixo da saudação há apenas **Menu**. O clique altera a própria mensagem para “Escolha uma opção, Marlon:” e mostra apenas **Ligar PC**. Ao enviar o sinal, a mensagem vira “✅ Sinal enviado para ligar seu PC.”, com **Menu** para continuar. O aviso de cliques repetidos também foi encurtado. Um erro de edição por mensagem já idêntica é ignorado; se a mensagem não puder mais ser editada, o bot tenta enviar uma nova resposta, sem repetir o envio WOL.
+A saudação e o menu incluem o nome que cada pessoa configurar em **Nome para saudação**; sem nome, usam o texto genérico. Abaixo da saudação há **Menu**, com as funções disponíveis. Ao enviar o sinal, a mensagem informa que ele foi enviado, sem afirmar que o PC ligou até receber resposta da rede.
 
 O APK preserva o identificador e a chave de assinatura. Instale a 1.0.3 como atualização, sem desinstalar, para manter as configurações da TV Box (incluindo broadcast ajustado no aparelho). O fluxo foi compilado e as transições e os limites de horário foram verificados localmente, sem usar o token real para enviar mensagens ou ligar o PC durante os testes. A execução final do novo fluxo no Telegram depende de instalar esta versão na Box.
 
 ## Verificação de resposta do PC — versão 1.0.4
 
-Depois de enviar Wake-on-LAN, o app consulta o IP do computador (padrão `192.168.0.6`) por até 45 segundos. Ele indica **“Seu PC está ligado e respondendo”** somente se um ping responder ou uma conexão TCP à porta de verificação for aceita. Quando não recebe resposta, mantém o resultado **sem confirmação**: o computador pode ter ligado e o firewall pode estar descartando os dois testes. A disponibilidade desta detecção depende das regras do PC e do roteador.
+Depois de enviar Wake-on-LAN, o app consulta o IP configurado do computador por até 45 segundos. Ele indica **“Seu PC está ligado e respondendo”** somente se um ping responder ou uma conexão TCP à porta de verificação for aceita. Quando não recebe resposta, mantém o resultado **sem confirmação**: o computador pode ter ligado e o firewall pode estar descartando os dois testes. A disponibilidade desta detecção depende das regras do PC e do roteador.
 
-O IP, a porta de verificação (padrão TCP 445, SMB/compartilhamento de arquivos no Windows), broadcast e MAC podem ser alterados em **Configurações**. O `.env` existente continua válido: durante a atualização, o app mantém os dados anteriores e acrescenta o IP e a porta de verificação padrão. Se a Box já tinha o IP gravado, confirme que ele continua em `192.168.0.6`.
+Na instalação nova, token, ID autorizado, MAC, IP e nome começam vazios e são preenchidos em **Configurações**. O broadcast padrão é `255.255.255.255`, a porta Wake-on-LAN é 9 e a porta de verificação é TCP 445. Em uma atualização por cima, o app lê os valores já salvos no Android; não desinstale o aplicativo. O `.env` continua aceito e também pode conter `BOT_DISPLAY_NAME`.
 
 A verificação de IP, validações e respostas TCP positivas/negativas passaram em testes locais. A descoberta no Android, resposta ICMP ou SMB no PC-alvo e o tempo de inicialização ainda precisam ser conferidos na sua rede após instalar a atualização. A confirmação representa resposta naquele IP, não inspeção de tela, login nem estado elétrico confirmado por hardware.
 

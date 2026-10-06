@@ -12,7 +12,7 @@ public final class ConversationCheck {
         c.clear();c.set(2026,Calendar.OCTOBER,day,hour,minute,second);return c.getTimeInMillis();
     }
     private static void greeting(int day,int hour,int minute,int second,String expected) {
-        check(Conversation.greeting(utc(day,hour,minute,second)).equals(expected+", Marlon! O que deseja?"),"Greeting at UTC "+hour+":"+minute+":"+second);
+        check(Conversation.greeting(utc(day,hour,minute,second),"Alex").equals(expected+", Alex! O que deseja?"),"Greeting at UTC "+hour+":"+minute+":"+second);
     }
     public static void main(String[] args) {
         TimeZone original=TimeZone.getDefault();

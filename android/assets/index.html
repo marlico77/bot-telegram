@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'none'; font-src 'self'; base-uri 'none'; form-action 'none'">
+<title>MarlicoBot</title><link rel="stylesheet" href="app.css">
+</head>
+<body>
+<svg class="symbols" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><defs>
+<symbol id="i-grid" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></symbol>
+<symbol id="i-power" viewBox="0 0 24 24"><path d="M12 2v9M6 5a9 9 0 1 0 12 0"/></symbol>
+<symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v6l4 2"/></symbol>
+<symbol id="i-settings" viewBox="0 0 24 24"><path d="M4 7h16M4 17h16"/><circle cx="9" cy="7" r="3"/><circle cx="16" cy="17" r="3"/></symbol>
+<symbol id="i-help" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 8a2.7 2.7 0 0 1 5 1.5c0 2-2.5 2-2.5 4M12 17h.01"/></symbol>
+<symbol id="i-pc" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M12 17v4M7 21h10"/></symbol>
+<symbol id="i-plane" viewBox="0 0 24 24"><path d="m21 3-7 18-4-8-8-3 19-7ZM10 13 21 3"/></symbol>
+<symbol id="i-shield" viewBox="0 0 24 24"><path d="m12 2 8 3v7c0 5-8 10-8 10S4 17 4 12V5l8-3Z"/><path d="m8 12 3 3 5-6"/></symbol>
+<symbol id="i-arrow" viewBox="0 0 24 24"><path d="M4 12h16m-6-6 6 6-6 6"/></symbol>
+<symbol id="i-import" viewBox="0 0 24 24"><path d="M12 3v12m-5-5 5 5 5-5M4 16v5h16v-5"/></symbol>
+<symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"/></symbol>
+<symbol id="i-close" viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></symbol>
+<symbol id="i-net" viewBox="0 0 24 24"><rect x="8" y="2" width="8" height="6" rx="1"/><path d="M12 8v6M4 17v-3h16v3"/><rect x="1" y="17" width="6" height="5" rx="1"/><rect x="17" y="17" width="6" height="5" rx="1"/></symbol>
+<symbol id="i-pause" viewBox="0 0 24 24"><path d="M8 5v14M16 5v14"/></symbol>
+</defs></svg>
+<div class="app">
+<aside class="sidebar">
+ <div class="brand"><span class="brand-icon"><svg><use href="#i-power"/></svg></span><div>marlico<span>BOT / TV</span></div></div>
+ <div class="nav-label">SEU ESPAÇO</div>
+ <nav aria-label="Navegação principal">
+  <button class="nav-item selected" data-panel="home" id="nav-home"><svg><use href="#i-grid"/></svg>Visão geral</button>
+  <button class="nav-item" data-panel="monitor"><svg><use href="#i-pc"/></svg>Monitorar PC</button>
+  <button class="nav-item" data-panel="activity"><svg><use href="#i-clock"/></svg>Atividade</button>
+  <button class="nav-item" data-panel="settings"><svg><use href="#i-settings"/></svg>Configurações</button>
+ </nav>
+ <div class="side-bottom">
+  <button class="nav-item" data-panel="help"><svg><use href="#i-help"/></svg>Como usar</button>
+  <div class="profile"><img src="avatar.png" alt="Avatar do MarlicoBot"/><div>MarlicoBot<small>Seu assistente pessoal</small></div></div>
+  <div class="version">ANDROID EDITION <span>1.1.0</span></div>
+ </div>
+</aside>
+<main>
+ <header><div><span class="eyebrow">CONTROLE REMOTO, DE VERDADE</span><h1>Bem-vindo, Marlon<span>.</span></h1></div><div class="status-pill" id="header-status"><i></i><span>Bot desconectado</span></div></header>
+ <section class="dashboard" aria-label="Painel do bot">
+ <div class="hero">
+  <div class="hero-copy"><div class="hero-label"><span class="tiny-square"></span> SEU PC. ONDE VOCÊ ESTIVER.</div>
+   <h2 id="hero-title">Seu PC,<br>a um toque.</h2><p id="hero-description">Ligue seu computador pelo Telegram.<br>A sua TV Box cuida do resto.</p>
+   <div class="hero-actions"><button class="primary" id="main-action"><svg><use href="#i-arrow"/></svg><span>Configurar bot</span></button><button class="icon-button" id="pause-action" title="Pausar bot" aria-label="Pausar bot" hidden><svg><use href="#i-pause"/></svg></button></div>
+   <div class="hero-note"><svg><use href="#i-shield"/></svg><span>Somente você e os usuários autorizados.</span></div>
+  </div>
+  <div class="computer-art" aria-hidden="true">
+   <div class="orbit orbit-one"></div><div class="orbit orbit-two"></div>
+   <div class="signal-tag"><span></span> WAKE-ON-LAN</div>
+   <svg class="monitor" viewBox="0 0 310 280" fill="none">
+    <defs><linearGradient id="case" x1="45" y1="50" x2="275" y2="230" gradientUnits="userSpaceOnUse"><stop stop-color="#5a6e64"/><stop offset=".3" stop-color="#283933"/><stop offset="1" stop-color="#14241f"/></linearGradient><linearGradient id="screen" x1="65" y1="70" x2="260" y2="195" gradientUnits="userSpaceOnUse"><stop stop-color="#293e30"/><stop offset="1" stop-color="#121e1c"/></linearGradient></defs>
+    <ellipse cx="169" cy="250" rx="104" ry="10" fill="#050b0a" opacity=".6"/>
+    <path d="m144 202-5 34-35 9q-4 4 2 6h105q7-2 1-6l-35-9-4-34" fill="url(#case)" stroke="#526757"/>
+    <path d="M43 53q0-9 10-10l213 11q11 1 11 11v133q0 12-12 12L51 221q-10 0-10-10Z" fill="url(#case)" stroke="#6b8370" stroke-width="1.2"/>
+    <path d="m51 57 216 11v127L51 207Z" fill="url(#screen)" stroke="#0b1511" stroke-width="3"/>
+    <path d="m52 157 29-2 12-17 24-1m-65-50 39 2 12 16 12 1m151 57-38 1-14-13-19 1m70-56-23-1-14 14-23-1" stroke="#5f7952" stroke-opacity=".35" stroke-width="1.2"/>
+    <circle cx="161" cy="132" r="42" fill="#bded79" fill-opacity=".05" stroke="#accf83" stroke-opacity=".2"/>
+    <circle cx="161" cy="132" r="32" fill="#c1f17b" fill-opacity=".06"/>
+    <path d="M161 111v23m-14-16a23 23 0 1 0 28 0" stroke="#c1f17b" stroke-width="4" stroke-linecap="round"/>
+    <circle cx="162" cy="208" r="2" fill="#c1f17b"/>
+   </svg>
+   <div class="floating-plane"><svg><use href="#i-plane"/></svg></div>
+  </div>
+ </div>
+ <section class="connection-card"><div class="card-heading"><h3>Conexão</h3><svg><use href="#i-net"/></svg></div>
+  <div class="connection-state"><div class="telegram-icon"><svg><use href="#i-plane"/></svg></div><div><strong id="bot-name">Seu bot no Telegram</strong><span id="connection-label">Aguardando configuração</span></div></div>
+  <div class="connection-line"><span id="line-status"></span><i></i><span></span><i></i><span></span></div>
+  <div class="connection-legend"><span>Telegram</span><span>TV Box</span><span>Seu PC</span></div>
+  <div class="divider"></div>
+  <div class="detail-row"><span>Rede da TV Box</span><strong id="network">Verificando…</strong></div>
+  <div class="detail-row"><span>Estado do PC</span><strong id="pc-state">Ainda não verificado</strong></div>
+  <button class="text-button" id="connection-action"><span>Importar configuração .env</span><svg><use href="#i-arrow"/></svg></button>
+ </section>
+ </section>
+ <div class="bottom-grid">
+  <section class="device-card"><div class="card-heading"><h3>Seu computador</h3><span class="small-tag">REDE LOCAL</span></div><div class="device-info"><div class="device-icon"><svg><use href="#i-pc"/></svg></div><div><strong>PC do Marlon</strong><span id="device-mac">00:E2:69:7C:B1:AA</span></div></div><p id="pc-probe-note">Depois de enviar o sinal, o app verifica se o IP do PC responde.</p></section>
+  <section class="activity-card"><div class="card-heading"><h3>Últimas atividades</h3><button class="mini-button" data-panel="activity">Ver todas <svg><use href="#i-arrow"/></svg></button></div><div id="recent-events" class="recent-events"><div class="empty-state"><svg><use href="#i-clock"/></svg><span>Seu histórico começa por aqui.<small>Conecte o bot para receber comandos.</small></span></div></div></section>
+ </div>
+ <footer><span><i></i> Uma mensagem. Seu PC ligado.</span><span>Use as setas do controle para navegar <kbd>OK</kbd> selecionar</span></footer>
+</main>
+</div>
+<div class="overlay" id="overlay" hidden>
+ <section class="panel" role="dialog" aria-modal="true" aria-labelledby="panel-title">
+ <div class="panel-heading"><div><span class="eyebrow" id="panel-eyebrow">DO SEU JEITO</span><h2 id="panel-title">Configurações</h2></div><button class="icon-button" id="close-panel" aria-label="Fechar"><svg><use href="#i-close"/></svg></button></div>
+ <div id="settings-panel" class="panel-body" hidden>
+  <button class="import-box" id="import-button"><span class="import-icon"><svg><use href="#i-import"/></svg></span><span><strong>Importar configuração do bot</strong><small>Selecione o arquivo .env com os dados do Telegram.</small></span><svg><use href="#i-arrow"/></svg></button>
+   <div class="form-divider"><span>ou configure os dados abaixo</span></div>
+  <form id="config-form">
+   <label class="full">Token do Telegram<input id="token" type="password" autocomplete="new-password" placeholder="Cole o token do BotFather" spellcheck="false"><small id="token-hint">O token fica protegido neste dispositivo.</small></label>
+   <div class="form-grid"><label>Seu ID no Telegram<input id="users" inputmode="numeric" autocomplete="off" spellcheck="false"></label><label>MAC do computador<input id="mac" autocomplete="off" spellcheck="false"></label><label>IP do computador<input id="pcIp" inputmode="decimal" autocomplete="off" spellcheck="false"><small>Use o IP local do Windows na mesma rede.</small></label><label>Porta para verificar o PC<input id="pcCheckPort" type="number" min="1" max="65535" inputmode="numeric"><small>Windows: 445 (compartilhamento de arquivos)</small></label><label>Broadcast da rede<input id="broadcast" inputmode="decimal" autocomplete="off"></label><label>Porta Wake-on-LAN<input id="port" type="number" min="1" max="65535" inputmode="numeric"></label><label>Porta do agente Windows<input id="agentPort" type="number" min="1" max="65535" inputmode="numeric"><small>Padrão: 8765</small></label></div>
+   <label class="switch-row"><span><strong>Iniciar com a TV Box</strong><small>Retoma o bot após reiniciar, se ele estava conectado.</small></span><input type="checkbox" id="auto-start" checked><span class="toggle"></span></label>
+   <div class="settings-note"><svg><use href="#i-help"/></svg><p>O pareamento é feito pela rede local. Ao iniciar, confirme o pedido na tela do computador. A importação acima continua servindo para carregar o .env do Telegram.</p></div>
+   <button class="secondary" id="pair-agent" type="button">Parear este dispositivo pela rede</button>
+   <div class="form-actions"><button class="secondary" id="battery-button" type="button">Permitir segundo plano</button><button class="primary" type="submit"><svg><use href="#i-check"/></svg>Salvar configuração</button></div>
+  </form>
+ </div>
+ <div id="activity-panel" class="panel-body" hidden><p class="panel-description">Os últimos 30 eventos deste dispositivo. Seu token nunca aparece aqui.</p><div id="all-events"></div></div>
+ <div id="monitor-panel" class="panel-body" hidden>
+  <p class="panel-description">Dados de leitura do Windows, atualizados quando você pedir. Capturar a tela sempre exige aprovação no próprio computador.</p>
+  <div id="monitor-pairing-help" class="settings-note pairing-needed" hidden><svg><use href="#i-help"/></svg><div><strong>Este Android ainda não está pareado com o PC</strong><p>Confira o IP do Windows em Configurações e toque abaixo. Depois, aceite o pedido que aparecerá na tela do computador.</p><button class="primary" id="monitor-pair-agent" type="button">Parear pela rede local</button></div></div>
+  <div id="monitor-content">
+  <div class="screen-actions"><label for="screen-monitor">Tela do PC</label><select id="screen-monitor"><option value="0">Monitor 1</option></select><button class="primary" id="start-live-screen">Acesso remoto</button><button class="secondary" id="stop-live-screen" disabled>Parar</button><button class="secondary" id="capture-screen">Foto única</button><button class="secondary" id="zoom-out" aria-label="Diminuir zoom">−</button><button class="secondary" id="zoom-reset">100%</button><button class="secondary" id="zoom-in" aria-label="Aumentar zoom">+</button></div>
+  <p class="panel-description">No primeiro acesso, aprove a solicitação no Windows. O app Android precisa estar na mesma rede do PC para abrir a tela ao vivo; fora dela, use as opções remotas no Telegram.</p>
+  <div class="form-grid monitor-grid"><div class="monitor-stat"><small>CPU</small><strong id="m-cpu">—</strong></div><div class="monitor-stat"><small>MEMÓRIA</small><strong id="m-memory">—</strong></div><div class="monitor-stat"><small>ARMAZENAMENTO</small><strong id="m-disk">—</strong></div><div class="monitor-stat"><small>PC LIGADO HÁ</small><strong id="m-uptime">—</strong></div></div>
+  <div class="monitor-window"><small>JANELA ATIVA</small><strong id="m-window">—</strong></div>
+  <div class="form-actions"><button class="secondary" id="refresh-monitor">Atualizar status</button><button class="secondary" id="refresh-processes">Ver programas abertos</button><button class="secondary" id="refresh-inventory">Hardware e programas instalados</button></div>
+  <div id="monitor-inventory" class="monitor-process-list" hidden></div>
+  <div id="monitor-process-list" class="monitor-process-list">Abra o painel para carregar os dados.</div>
+  <div class="screen-view"><img id="pc-screen" alt="Tela do computador compartilhada ao vivo" hidden></div>
+  </div>
+ </div>
+ <div id="help-panel" class="panel-body" hidden>
+  <div class="help-step"><b>01</b><div><h3>Traga sua configuração</h3><p>Nas configurações, toque em “Importar do pendrive” e selecione o arquivo .env. Se ele estiver oculto no seletor, ative “Mostrar arquivos ocultos”.</p></div></div>
+  <div class="help-step"><b>02</b><div><h3>Conecte seu bot</h3><p>Pare o bot antigo no Termux com Ctrl+C e toque em “Conectar bot” neste aplicativo. Se solicitado, permita as notificações.</p></div></div>
+  <div class="help-step"><b>03</b><div><h3>Abra o Telegram e diga olá</h3><p>Envie qualquer mensagem ao seu bot. Ele vai cumprimentar Marlon de acordo com o horário de Brasília. Toque em “Menu” e depois em “Ligar PC”.</p></div></div>
+  <div class="help-step"><b>04</b><div><h3>Confirme o PC e deixe a Box disponível</h3><p>Depois do sinal, o app espera até 45 segundos por resposta ao ping ou ao teste TCP configurado. Se ambos estiverem bloqueados, ele não afirma que o PC ligou. Permita o ping ou essa porta no firewall do PC. Mantenha a Box ligada, na mesma rede, e permita o app em segundo plano.</p></div></div>
+  <div class="settings-note"><svg><use href="#i-pc"/></svg><p>Wake-on-LAN precisa estar habilitado no PC. “Ligado e respondendo” confirma uma resposta de rede naquele IP; firewall ou isolamento da rede podem impedir a confirmação.</p></div>
+ </div>
+ </section>
+</div>
+<div id="toast" role="status" aria-live="polite" hidden></div>
+<script src="app.js"></script>
+</body></html>

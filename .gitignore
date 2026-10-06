@@ -1,0 +1,17 @@
+.env
+__pycache__/
+*.py[cod]
+.tools/
+android/build/
+android/signing/
+dist/
+windows/build/
+windows/dist/
+updates/
+transfer/
+*.p12
+*.pfx
+*.jks
+*.keystore
+**/password.txt
+.env.*

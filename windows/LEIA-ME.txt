@@ -1,0 +1,24 @@
+MARLICOBOT PC · WINDOWS 11
+
+INÍCIO
+1. Execute MarlicoBotPC-Setup.exe e aprove a solicitação do UAC para instalar para o computador.
+2. Abra MarlicoBot PC pelo menu Iniciar. O agente roda sem elevação e inicia com o Windows minimizado na área de notificação.
+3. Para abrir o painel, clique no ícone MarlicoBot perto do relógio (talvez esteja no menu ^ de ícones ocultos).
+4. Confira o endereço IPv4 da mesma rede da TV Box.
+5. Clique em “Permitir conexão da rede local” e aceite o UAC do Windows.
+6. No MarlicoBot Android, abra Monitorar PC → Parear pela rede local.
+7. Aprove o pedido de pareamento que aparecerá na tela do Windows. Não é necessário exportar nem transferir arquivo de pareamento.
+7. Para captura de tela, peça “Ver tela” no menu do Telegram e aprove cada pedido na confirmação visível neste computador.
+
+O instalador não está assinado por um publicador verificado. O UAC é separado do Microsoft Defender SmartScreen e não remove avisos de reputação. Não desative a proteção do Windows para instalar.
+
+O Android na mesma rede local pode abrir o painel “Monitorar PC”. Para consulta remota, deixe o bot conectado somente na TV Box e use os comandos do Telegram.
+
+PRIVACIDADE
+- O agente só consulta métricas, processos e janela ativa. Não envia comandos ao PC.
+- A captura da tela principal é única e só acontece após clicar “Sim” na confirmação visível do Windows; a autorização administrativa da instalação não ativa captura automática.
+- Não encaminhe a porta 8765 para a internet.
+- A chave de pareamento é enviada pela rede local após aprovação na tela do Windows.
+- Fechar a janela apenas a oculta na bandeja. No menu do ícone, escolha “Sair e parar o monitoramento” para parar o agente até o próximo login.
+- O inventário lista os aplicativos clássicos registrados pelo Windows; números de série não são coletados.
+- Desinstale em Configurações do Windows → Aplicativos instalados → MarlicoBot PC. As preferências de pareamento permanecem em AppData.

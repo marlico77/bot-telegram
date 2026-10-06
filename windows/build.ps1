@@ -47,7 +47,7 @@ if (Test-Path $appImage) {
     if (-not $resolved.StartsWith($rootResolved,[StringComparison]::OrdinalIgnoreCase)) { throw 'Destino de build fora da pasta do projeto.' }
     Remove-Item -LiteralPath $resolved -Recurse -Force
 }
-& (Join-Path $jdk 'bin\jpackage.exe') --type app-image --name MarlicoBotPC --app-version 1.2.3 --description 'Painel local de hardware e software para MarlicoBot' --vendor Marlico --icon $ico --input $inputDir --main-jar MarlicoBotPC.jar --main-class br.com.marlico.agent.Agent --runtime-image $runtime --dest (Split-Path $appImage -Parent)
+& (Join-Path $jdk 'bin\jpackage.exe') --type app-image --name MarlicoBotPC --app-version 1.3.0 --description 'Painel local de hardware e software para MarlicoBot' --vendor Marlico --icon $ico --input $inputDir --main-jar MarlicoBotPC.jar --main-class br.com.marlico.agent.Agent --runtime-image $runtime --dest (Split-Path $appImage -Parent)
 if ($LASTEXITCODE -ne 0) { throw 'Falha ao empacotar o aplicativo Windows.' }
 Copy-Item -LiteralPath (Join-Path $project 'LEIA-ME.txt') -Destination (Join-Path $appImage 'LEIA-ME.txt') -Force
 Copy-Item -LiteralPath (Join-Path $installerScripts 'Uninstall.ps1') -Destination (Join-Path $appImage 'Uninstall.ps1') -Force
@@ -180,3 +180,4 @@ Add-Type -TypeDefinition $iconEditor -Language CSharp
 [MarlicoSetupIcon]::Apply($setup,$ico)
 Write-Output "Instalador Windows: $setup"
 Write-Output 'Logo do MarlicoBot aplicada ao instalador; a assinatura digital é uma etapa separada.'
+

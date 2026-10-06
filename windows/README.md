@@ -16,7 +16,7 @@ O agente guarda uma chave aleatória de acesso em `%APPDATA%\MarlicoBot\agent.pr
 
 ## Dados e privacidade
 
-O painel retorna CPU, memória, armazenamento, tempo ligado, processos ativos e título da janela em primeiro plano. A aba **Hardware** reúne versão/edição/build do Windows, fabricante/modelo do PC, processador, núcleos e threads, módulos de RAM, placas de vídeo, placa-mãe, BIOS, discos, volumes e adaptadores de rede. A aba **Programas instalados** lista nome, versão e publicador encontrados nos registros padrão de instalação do Windows. O inventário também pode ser consultado no aplicativo Android e no menu do Telegram. Números de série não são coletados. Não implementa controle remoto, execução de programas ou comandos.
+O painel retorna CPU, memória, armazenamento, tempo ligado, processos ativos e título da janela em primeiro plano. A aba **Hardware** reúne versão/edição/build do Windows, fabricante/modelo do PC, processador, núcleos e threads, módulos de RAM, placas de vídeo, placa-mãe, BIOS, discos, volumes e adaptadores de rede. A aba **Programas instalados** lista nome, versão e publicador encontrados nos registros padrão de instalação do Windows. O inventário também pode ser consultado no aplicativo Android e no menu do Telegram. Números de série não são coletados. Não controla mouse ou teclado. A função de energia agenda o desligamento forçado após confirmação no aparelho pareado.
 
 Cada pedido de foto única traz o agente para a frente e pede confirmação no Windows. Para visualização ao vivo, toque em **Acesso remoto** no Android: o Windows pedirá autorização para aquela sessão. Se a pessoa no PC quiser, pode marcar **Permitir visualização contínua quando eu iniciar no app** na aba de privacidade para não confirmar cada sessão. Quando a tela está sendo compartilhada, o agente mostra **TELA COMPARTILHADA AO VIVO** e a bandeja exibe um aviso; **Parar transmissão agora** encerra o compartilhamento localmente. O app recebe quadros JPEG de até 1280×720, pode trocar entre monitores e ajustar o zoom. A permissão não habilita teclado, mouse ou controle remoto. Bloqueio da sessão, desktop seguro ou políticas do sistema podem impedir as imagens.
 
@@ -31,3 +31,10 @@ No repositório, com Microsoft OpenJDK 17 na pasta `.tools/jdk/`:
 ```
 
 O script compila o agente, confere o inventário real do Windows, cria um runtime próprio, gera um ícone Windows a partir da logo e produz `dist/MarlicoBotPC-Setup.exe`. O instalador é criado com o IExpress incluído no Windows. Para gerar o pacote sem executar as verificações locais do agente, use `./windows/build.ps1 -SkipChecks`.
+
+## Versão 1.3.0
+
+Tema rosa, logo transparente e sessão de tela com identificador próprio. O Android aguarda a autorização por até 110 segundos; a confirmação no Windows expira em 90 segundos. O estado ao vivo aparece após o primeiro quadro. Falhas de captura ficam em capture-errors.log, na pasta AppData/MarlicoBot.
+
+Desligamento forçado: confirmação válida por 60 segundos, seguida de 30 segundos para cancelar pelo Android, Telegram ou agente. Programas serão fechados com perda de alterações não salvas. O Windows pode recusar por política/permissão; o agente informa o erro. Não há teste de desligamento automático durante o build.
+

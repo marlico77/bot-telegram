@@ -17,6 +17,8 @@ public final class BotService extends Service {
     private static long lastWake=-100000;
     private static final long CHECK_INTERVAL_MS=3500, CHECK_TIMEOUT_MS=45000;
     private PendingCheck pendingCheck;
+    private final Map<Long,String> powerTickets=new HashMap<>();
+    private final Map<Long,Long> powerDeadlines=new HashMap<>();
     private static final class PendingCheck {
         final long chat,message,deadline;
         final String nonce;
@@ -157,6 +159,7 @@ public final class BotService extends Service {
             if(!pcOnline)rows.put(new JSONArray().put(button("⚡ Ligar PC","wake",nonce)));
             rows.put(new JSONArray().put(button("📊 Métricas","status",nonce)).put(button("📂 Programas abertos","programs",nonce)));
             rows.put(new JSONArray().put(button("📸 Print da tela","screen",nonce)).put(button("🧰 Hardware","inventory",nonce)));
+            rows.put(new JSONArray().put(button("⏻ Desligar PC","shutdown",nonce)));
         } else rows.put(new JSONArray().put(new JSONObject().put("text","Menu").put("callback_data",Conversation.callback("menu",nonce))));
         return new JSONObject().put("inline_keyboard",rows);
     }
@@ -186,6 +189,22 @@ public final class BotService extends Service {
         if(chat==null||!"private".equals(chat.optString("type"))||chat.optLong("id")!=from.optLong("id"))return;
         long chatId=chat.getLong("id");
         if(cb!=null) {
+            String callback=cb.optString("data","");
+            if(callback.startsWith("power:")||callback.startsWith("abortpower:")){
+                api.call("answerCallbackQuery",new JSONObject().put("callback_query_id",cb.getString("id")));
+                if(callback.startsWith("abortpower:")){
+                    if(!callback.equals("abortpower:"+nonce)){replyQuiet(chatId,0,"Este botão expirou. Use /cancelar_desligamento.",nonce);return;}
+                    cancelPower(chatId,nonce);return;
+                }
+                String ticket=powerTickets.get(chatId);
+                if(ticket==null||!callback.equals("power:"+ticket)||SystemClock.elapsedRealtime()>(powerDeadlines.containsKey(chatId)?powerDeadlines.get(chatId):0L)){replyQuiet(chatId,0,"Confirmação expirada. Envie /desligar novamente.",nonce);return;}
+                powerTickets.remove(chatId);powerDeadlines.remove(chatId);
+                try{AgentApi.post(cfg,"/api/power","confirm:"+ticket);
+                    JSONObject cancel=new JSONObject().put("inline_keyboard",new JSONArray().put(new JSONArray().put(new JSONObject().put("text","Cancelar desligamento").put("callback_data","abortpower:"+nonce))));
+                    api.call("sendMessage",new JSONObject().put("chat_id",chatId).put("text","Desligamento agendado em 30 segundos. Os programas serão fechados à força. Isso ainda não confirma que o PC desligou.").put("reply_markup",cancel));
+                    event(this,"warn","Desligamento forçado confirmado pelo Telegram.");
+                }catch(Exception e){replyQuiet(chatId,0,"Não foi possível concluir o pedido: "+e.getMessage(),nonce);}return;
+            }
             Conversation.Action action=Conversation.action(cb.optString("data"),nonce);
             JSONObject answer=new JSONObject().put("callback_query_id",cb.getString("id"));
             if(action==Conversation.Action.GREETING)answer.put("text","Menu atualizado. Toque em Menu para continuar.");
@@ -197,16 +216,25 @@ public final class BotService extends Service {
             else if(action==Conversation.Action.PROGRAMS)showPrograms(chatId,messageId,nonce);
             else if(action==Conversation.Action.SCREEN)showScreen(chatId,messageId,nonce);
             else if(action==Conversation.Action.INVENTORY)showInventory(chatId,messageId,nonce);
+            else if(action==Conversation.Action.SHUTDOWN)preparePower(chatId,nonce);
             else reply(chatId,messageId,Conversation.greeting(System.currentTimeMillis()),nonce,Conversation.Action.GREETING);
         } else {
             String text=message==null?"":message.optString("text","").trim();String command=text.isEmpty()?"":text.split("\\s+",2)[0].toLowerCase(Locale.ROOT).replaceFirst("@[^@]+$","");
             if(command.equals("/metricas")||command.equals("/métricas")||command.equals("/status"))showStatus(chatId,0,nonce);
             else if(command.equals("/programas")||command.equals("/processos"))showPrograms(chatId,0,nonce);
             else if(command.equals("/print")||command.equals("/print_tela")||command.equals("/screenshot"))showScreen(chatId,0,nonce);
+            else if(command.equals("/desligar"))preparePower(chatId,nonce);
+            else if(command.equals("/cancelar_desligamento"))cancelPower(chatId,nonce);
             else if(command.equals("/ligar")||command.equals("/wake")){if(AgentApi.isOnline(cfg))reply(chatId,0,"✅ Computador ligado. Não é necessário enviar o sinal de ligar.",nonce,Conversation.Action.GREETING);else wakeAndReply(chatId,0,cfg,nonce);}
             else reply(chatId,0,Conversation.greeting(System.currentTimeMillis()),nonce,Conversation.Action.GREETING);
         }
     }
+    private void preparePower(long chat,String nonce){try{
+        String ticket=AgentApi.post(Config.load(this),"/api/power","prepare").getString("ticket");powerTickets.put(chat,ticket);powerDeadlines.put(chat,SystemClock.elapsedRealtime()+60000);
+        JSONObject keys=new JSONObject().put("inline_keyboard",new JSONArray().put(new JSONArray().put(new JSONObject().put("text","Confirmar: desligar e fechar tudo").put("callback_data","power:"+ticket))).put(new JSONArray().put(button("Voltar ao menu","menu",nonce))));
+        api.call("sendMessage",new JSONObject().put("chat_id",chat).put("text","Desligar o PC? Todos os programas serão forçados a fechar. Alterações não salvas serão perdidas. Após confirmar, haverá 30 segundos para cancelar. A confirmação expira em 60 segundos.").put("reply_markup",keys));
+    }catch(Exception e){replyQuiet(chat,0,"Não foi possível solicitar o desligamento: "+e.getMessage(),nonce);}}
+    private void cancelPower(long chat,String nonce){try{AgentApi.post(Config.load(this),"/api/power","cancel");replyQuiet(chat,0,"Desligamento cancelado.",nonce);}catch(Exception e){replyQuiet(chat,0,"Não foi possível cancelar: "+e.getMessage(),nonce);}}
     private void showStatus(long chat,long message,String nonce){try{JSONObject data=AgentApi.get(Config.load(this),"/api/status");reply(chat,message,AgentApi.statusText(data),nonce,Conversation.Action.GREETING);event(this,"info","Status do PC consultado pelo Telegram.");}catch(Exception e){replyQuiet(chat,message,"⚠️ Não consegui consultar o PC. Confirme se o agente Windows está aberto, o IP está correto e o pareamento foi importado.",nonce);}}
     private void showPrograms(long chat,long message,String nonce){try{JSONArray list=AgentApi.get(Config.load(this),"/api/processes").optJSONArray("processes");StringBuilder out=new StringBuilder("📂 Programas e processos ativos:\n");if(list==null||list.length()==0)out.append("Nenhum processo listado.");else for(int i=0;i<Math.min(list.length(),22);i++){JSONObject p=list.getJSONObject(i);out.append("• ").append(p.optString("name","Programa")).append(" · ").append(AgentApi.bytes(p.optLong("memoryBytes",0))).append("\n");}reply(chat,message,out.toString(),nonce,Conversation.Action.GREETING);event(this,"info","Lista de processos do PC consultada pelo Telegram.");}catch(Exception e){event(this,"warn","A consulta de processos falhou: "+(e.getMessage()==null?"erro de rede":e.getMessage()));replyQuiet(chat,message,"⚠️ Não consegui consultar os programas. Confira se o agente Windows está ativo, se o IP está correto e se o pareamento pela rede foi aprovado.",nonce);}}
     private void showInventory(long chat,long message,String nonce){try{JSONObject data=AgentApi.get(Config.load(this),"/api/inventory");JSONObject fields=data.optJSONObject("fields");StringBuilder out=new StringBuilder("🧰 Inventário do computador\n");if(fields!=null){java.util.Iterator<String> keys=fields.keys();while(keys.hasNext()){String key=keys.next();String value=fields.optString(key,"");if(!value.isEmpty())out.append("• ").append(key).append(": ").append(value).append("\n");}}JSONArray apps=data.optJSONArray("installedPrograms");int count=apps==null?0:apps.length();out.append("\n📦 Aplicativos instalados (").append(count).append("):\n");if(apps!=null)for(int i=0;i<Math.min(count,12);i++){JSONObject app=apps.optJSONObject(i);if(app!=null)out.append("• ").append(app.optString("name","Aplicativo")).append(app.optString("version","").isEmpty()?"":" · "+app.optString("version")).append("\n");}if(count>12)out.append("… e mais ").append(count-12).append(". Veja a lista completa na aba Programas instalados do Windows.");reply(chat,message,out.toString(),nonce,Conversation.Action.GREETING);event(this,"info","Inventário de hardware e programas instalado consultado pelo Telegram.");}catch(Exception e){replyQuiet(chat,message,"⚠️ Não consegui consultar o inventário. Confirme que o agente Windows está aberto e o pareamento foi importado.",nonce);}}
@@ -249,3 +277,5 @@ public final class BotService extends Service {
     }
     @Override public IBinder onBind(Intent i){return null;}
 }
+
+

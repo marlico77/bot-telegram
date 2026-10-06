@@ -4,7 +4,7 @@ Aplicativo Android para TV Box e celular. Recebe comandos do Telegram na TV Box,
 
 ## Instalação
 
-1. Copie `dist/MarlicoBot-1.2.3.apk` para o pendrive. Instale por cima da versão anterior sem desinstalá-la, para manter as configurações.
+1. Copie `dist/MarlicoBot-1.3.0.apk` para o pendrive. Instale por cima da versão anterior sem desinstalá-la, para manter as configurações.
 2. Na TV Box, abra o APK com o gerenciador de arquivos e permita a instalação por essa fonte se o Android solicitar.
 3. Se ainda não configurou o bot, importe o `.env` já usado. Para parear com o PC, abra **Monitorar PC → Parear pela rede local** e aprove o pedido na tela do Windows.
 4. Pare o bot antigo no Termux com **Ctrl+C** e encerre qualquer cópia no PC.
@@ -115,3 +115,11 @@ No menu do Telegram há **Status do PC**, **Programas abertos** e **Ver tela**, 
 O celular pode abrir **Monitorar PC** e atualizar status/processos enquanto estiver na mesma rede do PC. Para consulta de fora de casa, use o menu do Telegram por meio da TV Box; o painel Android não cria acesso remoto/VPN. Para evitar conflitos, mantenha o long polling do bot somente na TV Box; a instalação do APK no celular serve para o painel local e não deve ser conectada ao mesmo bot.
 
 As verificações locais passaram: 132 validações WOL/configuração, 33 regras de horário e callbacks, verificação de navegação e layout em 390×844, 960×540, 1280×720 e 1920×1080, mais 6 verificações HTTP do agente (autorização, JSON, lista de processos, captura protegida e ausência de endpoint de controle). Os instaladores foram compilados e suas assinaturas/alinhamento conferidos. Ainda não foram executados nem pareados na TV Box e no PC físicos do usuário; o primeiro status e a aprovação real da captura dependem dessa instalação.
+
+## Novidades da 1.3.0
+
+Tema rosa e logo transparente. O desenho do monitor foi substituído por um painel com o estado do computador. No celular, navegação superior, cartões em uma coluna e controles maiores; a tela de monitoramento ocupa a altura disponível.
+
+A sessão ao vivo espera a autorização Windows, recebe quadros com identificador de sessão, tenta recuperar falhas temporárias e permite trocar monitores sem reautorizar. O painel mostra a imagem acima das métricas. A imagem pode ficar indisponível na tela de bloqueio ou no desktop seguro do Windows. Não há controle de mouse/teclado nem acesso direto externo sem uma conexão privada de rede.
+
+Desligar PC abre uma confirmação sobre perda de dados não salvos. Com o pedido confirmado, o Windows força o fechamento dos programas em 30 segundos. O botão Cancelar desligamento e /cancelar_desligamento interrompem o pedido enquanto o prazo não acaba. O comando /desligar também está no menu do Telegram.

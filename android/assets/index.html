@@ -24,7 +24,7 @@
 </defs></svg>
 <div class="app">
 <aside class="sidebar">
- <div class="brand"><span class="brand-icon"><svg><use href="#i-power"/></svg></span><div>marlico<span>BOT / TV</span></div></div>
+ <div class="brand"><span class="brand-icon"><img src="avatar.png" alt="Logo MarlicoBot"/></span><div>marlico<span>BOT / TV</span></div></div>
  <div class="nav-label">SEU ESPAÇO</div>
  <nav aria-label="Navegação principal">
   <button class="nav-item selected" data-panel="home" id="nav-home"><svg><use href="#i-grid"/></svg>Visão geral</button>
@@ -35,11 +35,11 @@
  <div class="side-bottom">
   <button class="nav-item" data-panel="help"><svg><use href="#i-help"/></svg>Como usar</button>
   <div class="profile"><img src="avatar.png" alt="Avatar do MarlicoBot"/><div>MarlicoBot<small>Seu assistente pessoal</small></div></div>
-  <div class="version">ANDROID EDITION <span>1.1.0</span></div>
+  <div class="version">ANDROID EDITION <span>1.3.0</span></div>
  </div>
 </aside>
 <main>
- <header><div><span class="eyebrow">CONTROLE REMOTO, DE VERDADE</span><h1>Bem-vindo, Marlon<span>.</span></h1></div><div class="status-pill" id="header-status"><i></i><span>Bot desconectado</span></div></header>
+ <header><div><span class="eyebrow">SEU COMPUTADOR, CONECTADO</span><h1>Bem-vindo, Marlon<span>.</span></h1></div><div class="status-pill" id="header-status"><i></i><span>Bot desconectado</span></div></header>
  <section class="dashboard" aria-label="Painel do bot">
  <div class="hero">
   <div class="hero-copy"><div class="hero-label"><span class="tiny-square"></span> SEU PC. ONDE VOCÊ ESTIVER.</div>
@@ -47,25 +47,8 @@
    <div class="hero-actions"><button class="primary" id="main-action"><svg><use href="#i-arrow"/></svg><span>Configurar bot</span></button><button class="icon-button" id="pause-action" title="Pausar bot" aria-label="Pausar bot" hidden><svg><use href="#i-pause"/></svg></button></div>
    <div class="hero-note"><svg><use href="#i-shield"/></svg><span>Somente você e os usuários autorizados.</span></div>
   </div>
-  <div class="computer-art" aria-hidden="true">
-   <div class="orbit orbit-one"></div><div class="orbit orbit-two"></div>
-   <div class="signal-tag"><span></span> WAKE-ON-LAN</div>
-   <svg class="monitor" viewBox="0 0 310 280" fill="none">
-    <defs><linearGradient id="case" x1="45" y1="50" x2="275" y2="230" gradientUnits="userSpaceOnUse"><stop stop-color="#5a6e64"/><stop offset=".3" stop-color="#283933"/><stop offset="1" stop-color="#14241f"/></linearGradient><linearGradient id="screen" x1="65" y1="70" x2="260" y2="195" gradientUnits="userSpaceOnUse"><stop stop-color="#293e30"/><stop offset="1" stop-color="#121e1c"/></linearGradient></defs>
-    <ellipse cx="169" cy="250" rx="104" ry="10" fill="#050b0a" opacity=".6"/>
-    <path d="m144 202-5 34-35 9q-4 4 2 6h105q7-2 1-6l-35-9-4-34" fill="url(#case)" stroke="#526757"/>
-    <path d="M43 53q0-9 10-10l213 11q11 1 11 11v133q0 12-12 12L51 221q-10 0-10-10Z" fill="url(#case)" stroke="#6b8370" stroke-width="1.2"/>
-    <path d="m51 57 216 11v127L51 207Z" fill="url(#screen)" stroke="#0b1511" stroke-width="3"/>
-    <path d="m52 157 29-2 12-17 24-1m-65-50 39 2 12 16 12 1m151 57-38 1-14-13-19 1m70-56-23-1-14 14-23-1" stroke="#5f7952" stroke-opacity=".35" stroke-width="1.2"/>
-    <circle cx="161" cy="132" r="42" fill="#bded79" fill-opacity=".05" stroke="#accf83" stroke-opacity=".2"/>
-    <circle cx="161" cy="132" r="32" fill="#c1f17b" fill-opacity=".06"/>
-    <path d="M161 111v23m-14-16a23 23 0 1 0 28 0" stroke="#c1f17b" stroke-width="4" stroke-linecap="round"/>
-    <circle cx="162" cy="208" r="2" fill="#c1f17b"/>
-   </svg>
-   <div class="floating-plane"><svg><use href="#i-plane"/></svg></div>
-  </div>
- </div>
- <section class="connection-card"><div class="card-heading"><h3>Conexão</h3><svg><use href="#i-net"/></svg></div>
+  <div class="device-summary"><img src="avatar.png" alt=""/><span class="eyebrow">MARLICOBOT</span><strong id="hero-device-state">Seu computador</strong><span>Energia · métricas · tela ao vivo</span><button class="secondary" data-panel="monitor">Abrir painel do PC <svg><use href="#i-arrow"/></svg></button></div>
+ </div> <section class="connection-card"><div class="card-heading"><h3>Conexão</h3><svg><use href="#i-net"/></svg></div>
   <div class="connection-state"><div class="telegram-icon"><svg><use href="#i-plane"/></svg></div><div><strong id="bot-name">Seu bot no Telegram</strong><span id="connection-label">Aguardando configuração</span></div></div>
   <div class="connection-line"><span id="line-status"></span><i></i><span></span><i></i><span></span></div>
   <div class="connection-legend"><span>Telegram</span><span>TV Box</span><span>Seu PC</span></div>
@@ -103,13 +86,13 @@
   <div id="monitor-pairing-help" class="settings-note pairing-needed" hidden><svg><use href="#i-help"/></svg><div><strong>Este Android ainda não está pareado com o PC</strong><p>Confira o IP do Windows em Configurações e toque abaixo. Depois, aceite o pedido que aparecerá na tela do computador.</p><button class="primary" id="monitor-pair-agent" type="button">Parear pela rede local</button></div></div>
   <div id="monitor-content">
   <div class="screen-actions"><label for="screen-monitor">Tela do PC</label><select id="screen-monitor"><option value="0">Monitor 1</option></select><button class="primary" id="start-live-screen">Acesso remoto</button><button class="secondary" id="stop-live-screen" disabled>Parar</button><button class="secondary" id="capture-screen">Foto única</button><button class="secondary" id="zoom-out" aria-label="Diminuir zoom">−</button><button class="secondary" id="zoom-reset">100%</button><button class="secondary" id="zoom-in" aria-label="Aumentar zoom">+</button></div>
-  <p class="panel-description">No primeiro acesso, aprove a solicitação no Windows. O app Android precisa estar na mesma rede do PC para abrir a tela ao vivo; fora dela, use as opções remotas no Telegram.</p>
+  <div class="screen-view" id="screen-view"><div id="screen-message" role="status">Toque em Acesso remoto para visualizar o computador.</div><img id="pc-screen" alt="Tela compartilhada do computador" hidden></div><div class="screen-actions"><button class="secondary" id="expand-screen">Ampliar visualização</button><button class="danger" id="shutdown-pc">Desligar PC</button><button class="secondary" id="cancel-shutdown">Cancelar desligamento</button></div><p class="panel-description">No primeiro acesso, aprove a solicitação no Windows. O app Android precisa estar na mesma rede do PC para abrir a tela ao vivo; fora dela, use as opções remotas no Telegram.</p>
   <div class="form-grid monitor-grid"><div class="monitor-stat"><small>CPU</small><strong id="m-cpu">—</strong></div><div class="monitor-stat"><small>MEMÓRIA</small><strong id="m-memory">—</strong></div><div class="monitor-stat"><small>ARMAZENAMENTO</small><strong id="m-disk">—</strong></div><div class="monitor-stat"><small>PC LIGADO HÁ</small><strong id="m-uptime">—</strong></div></div>
   <div class="monitor-window"><small>JANELA ATIVA</small><strong id="m-window">—</strong></div>
   <div class="form-actions"><button class="secondary" id="refresh-monitor">Atualizar status</button><button class="secondary" id="refresh-processes">Ver programas abertos</button><button class="secondary" id="refresh-inventory">Hardware e programas instalados</button></div>
   <div id="monitor-inventory" class="monitor-process-list" hidden></div>
   <div id="monitor-process-list" class="monitor-process-list">Abra o painel para carregar os dados.</div>
-  <div class="screen-view"><img id="pc-screen" alt="Tela do computador compartilhada ao vivo" hidden></div>
+  
   </div>
  </div>
  <div id="help-panel" class="panel-body" hidden>
@@ -124,3 +107,4 @@
 <div id="toast" role="status" aria-live="polite" hidden></div>
 <script src="app.js"></script>
 </body></html>
+

@@ -6,7 +6,7 @@ Projeto pessoal para ligar e monitorar um PC Windows 11 pela TV Box, aplicativo 
 
 Os instaladores serão publicados em [Releases](https://github.com/marlico77/bot-telegram/releases). Este repositório contém o código dos programas; o site de downloads fica em [Site-bot-telegram](https://github.com/marlico77/Site-bot-telegram).
 
-A versão 1.3.2 retira os dados pessoais usados como padrão e permite definir o nome da saudação. Os pacotes são gerados em dist; a publicação em Releases é separada do commit de código.
+A versão 1.3.3 organiza o menu do Telegram em lista, move as atualizações do Android para Configurações e oferece uma opção local de acesso à tela sem supervisão no agente Windows. Os pacotes são gerados em dist; a publicação em Releases é separada do commit de código.
 
 ## Atualizações pelo aplicativo
 
@@ -16,11 +16,11 @@ Depois disso, Android e Windows consultam `https://botmy.netlify.app/api/v1/upda
 
 Quando houver uma versão nova, o app avisa e oferece o download. O arquivo é conferido pelo tamanho e SHA-256 antes de abrir o instalador. O APK também precisa ter o mesmo pacote e assinatura do app instalado. A instalação depende da confirmação do usuário no Android ou do UAC no Windows. No Android 8 ou superior, autorize instalar apps desta fonte e volte para **Instalar download**. Se cancelar a instalação, pode tentar novamente pelo mesmo botão. Os dados de configuração são preservados.
 
-Para publicar: crie um Release com o APK, o instalador EXE e `updates.json`. Aumente o `build` de cada plataforma e mantenha os nomes e hashes do manifesto iguais aos anexos. Na versão 1.3.2, Android usa build 14 e Windows usa build 4. O campo `minimumBuild` define a menor versão permitida, por plataforma; o padrão 0 não obriga ninguém a atualizar. Para uma próxima atualização obrigatória, defina o mínimo como o build exigido, nunca maior que o build publicado. Os clientes com atualizador bloqueiam as funções de monitoramento até atualizar. Clientes anteriores à 1.3.1 não obedecem a esse campo.
+Para publicar: crie um Release com o APK, o instalador EXE e `updates.json`. Aumente o `build` de cada plataforma e mantenha os nomes e hashes do manifesto iguais aos anexos. Na versão 1.3.3, Android usa build 15 e Windows usa build 5. O campo `minimumBuild` define a menor versão permitida, por plataforma; o padrão 0 não obriga ninguém a atualizar. Para uma próxima atualização obrigatória, defina o mínimo como o build exigido, nunca maior que o build publicado. Os clientes com atualizador bloqueiam as funções de monitoramento até atualizar. Clientes anteriores à 1.3.1 não obedecem a esse campo.
 
 Uma falha de internet não cria uma obrigação de atualizar. Uma obrigação já recebida permanece guardada até instalar uma versão compatível ou receber um manifesto válido com outra política. Downloads vêm somente do repositório oficial via HTTPS. O instalador Windows continua sem assinatura Authenticode; a verificação do download não substitui a assinatura do publicador.
 
-O instalador pede confirmação do UAC e instala o agente em Arquivos de Programas. O agente roda sem elevação na sessão do usuário e inicia com o Windows, minimizado na área de notificação. Fechar a janela a oculta; o menu do ícone pode abrir o painel ou parar o agente. O painel exibe métricas, processos ativos, hardware e programas instalados. O inventário também fica disponível no painel Android e no menu do Telegram. A visualização é somente leitura, sem teclado, mouse ou shell. A função de energia permite desligar o PC após confirmação. A foto única pede autorização em cada solicitação. A tela ao vivo começa após autorizar a sessão no Windows ou ativar a permissão persistente e iniciar pelo app; o ícone indica quando está ativa e permite parar localmente.
+O instalador pede confirmação do UAC e instala o agente em Arquivos de Programas. O agente roda sem elevação na sessão do usuário e inicia com o Windows, minimizado na área de notificação. Fechar a janela a oculta; o menu do ícone pode abrir o painel ou parar o agente. O painel exibe métricas, processos ativos, hardware e programas instalados. O inventário também fica disponível no painel Android e no menu do Telegram. A visualização é somente leitura, sem teclado, mouse ou shell. A função de energia permite desligar o PC após confirmação. Por padrão, cada visualização ao vivo e foto única pede autorização no Windows. O usuário do PC pode ativar localmente **Permitir acesso à tela sem supervisão** para dispensar aprovações futuras; a preferência pode ser revogada no agente. A tela ao vivo ainda precisa ser iniciada pelo app, e o agente indica quando está ativa e permite pará-la localmente.
 
 O instalador atual não tem assinatura Authenticode de um publicador verificado. O UAC não remove avisos do Microsoft Defender SmartScreen. Não desative a proteção do Windows; para distribuição confiável, é necessário assinar o pacote com um certificado de assinatura de código reconhecido.
 
@@ -29,7 +29,7 @@ O instalador atual não tem assinatura Authenticode de um publicador verificado.
 1. Abra MarlicoBot PC pelo ícone da bandeja e selecione **Permitir conexão da rede local**. O Windows pode pedir autorização de administrador para criar uma regra de firewall limitada à sub-rede local.
 2. No app Android, abra **Monitorar PC → Parear pela rede local** e confirme o IP privado do computador.
 3. Aprove o pedido de pareamento que aparecerá na tela do Windows. A chave é guardada no Android sem transferir arquivo.
-4. Para consultas pelo Telegram fora de casa, deixe o MarlicoBot conectado somente na TV Box. Envie `/metricas`, `/programas` ou `/print` ao bot, ou toque nas opções do **Menu**. A captura única de tela ainda pede aprovação no Windows.
+4. Para consultas pelo Telegram fora de casa, deixe o MarlicoBot conectado somente na TV Box. Envie `/metricas`, `/programas` ou `/print` ao bot, ou toque nas opções do **Menu**. A captura única pede aprovação no Windows, exceto se a pessoa no PC ativou o acesso à tela sem supervisão.
 
 O painel Android consulta o PC diretamente quando o celular está na mesma rede local. Fora de casa, use os comandos do Telegram; o painel não cria uma VPN. O pareamento é aprovado no Windows e funciona apenas pela rede local. Não encaminhe a porta do agente para a internet.
 

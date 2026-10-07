@@ -13,7 +13,7 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 final class AppUpdates {
-    static final int BUILD=14;
+    static final int BUILD=15;
     private static final ScheduledExecutorService worker=Executors.newSingleThreadScheduledExecutor();
     private static final AtomicBoolean checking=new AtomicBoolean(),downloading=new AtomicBoolean();
     private static volatile long checked;
@@ -39,7 +39,7 @@ final class AppUpdates {
                 UpdateFeed.Result result=UpdateFeed.check("android",BUILD);
                 if(!result.fresh)throw new IOException("Catálogo temporariamente desatualizado. Tentaremos novamente.");
                 if(result.release!=null){release=result.release;prefs(c).edit().putString("manifest",result.raw).putInt("minimum",release.minimumBuild).apply();}checked=System.currentTimeMillis();
-                message=available()?"Versão "+release.version+" disponível. Toque para baixar.":result.release==null?"Nenhuma versão publicada no catálogo.":"Você está usando a versão mais recente (1.3.2).";
+                message=available()?"Versão "+release.version+" disponível. Toque para baixar.":result.release==null?"Nenhuma versão publicada no catálogo.":"Você está usando a versão mais recente (1.3.3).";
                 if(available()&&prefs(c).getInt("notified",0)!=release.build){notifyUpdate(c);prefs(c).edit().putInt("notified",release.build).apply();}
             }catch(Exception e){message="Não foi possível consultar atualizações. Verifique a internet e tente novamente.";checked=System.currentTimeMillis()-5*3600000L;}
             finally{checking.set(false);}

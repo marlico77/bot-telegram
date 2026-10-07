@@ -8,7 +8,7 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 final class AppUpdates {
-    static final int BUILD=4;
+    static final int BUILD=5;
     interface Listener {void changed(String status,boolean available,boolean required,boolean busy);void discovered(String version,boolean required);void installerReady();}
     private final Path folder;
     private final Listener listener;
@@ -32,7 +32,7 @@ final class AppUpdates {
             UpdateFeed.Result result=UpdateFeed.check("windows",BUILD);if(!result.fresh)throw new IOException("Catálogo temporariamente desatualizado.");
             // Keep a known required policy if the server temporarily returns an empty catalog.
             if(result.release!=null){Path part=folder.resolve("manifest.json.part");Files.writeString(part,result.raw,StandardCharsets.UTF_8);Files.move(part,folder.resolve("manifest.json"),StandardCopyOption.REPLACE_EXISTING);release=result.release;minimum=release.minimumBuild;}
-            status=available()?"Versão "+release.version+" disponível":result.release==null?"Nenhuma versão publicada no catálogo":"Versão 1.3.2 atualizada";
+            status=available()?"Versão "+release.version+" disponível":result.release==null?"Nenhuma versão publicada no catálogo":"Versão 1.3.3 atualizada";
             if(available()&&notified!=release.build){notified=release.build;listener.discovered(release.version,required());}
         }catch(Exception e){status="Sem conexão com o catálogo. Tente novamente.";}finally{busy.set(false);emit();}});
     }

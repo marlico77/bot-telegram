@@ -35,14 +35,10 @@
  <div class="side-bottom">
   <button class="nav-item" data-panel="help"><svg><use href="#i-help"/></svg>Como usar</button>
   <div class="profile"><img src="avatar.png" alt="Avatar do MarlicoBot"/><div>MarlicoBot<small>Seu assistente pessoal</small></div></div>
-  <div class="version">ANDROID EDITION <span>1.3.2</span></div>
+  <div class="version">ANDROID EDITION <span>1.3.3</span></div>
  </div>
 </aside>
 <main>
- <section class="updates-card" aria-label="Atualizações oficiais">
-  <div><strong>MarlicoBot 1.3.2</strong><p id="update-status" role="status">Consultando atualizações…</p></div>
-  <div class="update-actions"><button class="secondary" id="update-check">Verificar</button><button class="primary" id="update-download" hidden>Baixar atualização</button><button class="secondary" id="update-install" hidden>Instalar download</button></div>
- </section>
  <header><div><span class="eyebrow">SEU COMPUTADOR, CONECTADO</span><h1 id="welcome-title">Bem-vindo<span>.</span></h1></div><div class="status-pill" id="header-status"><i></i><span>Bot desconectado</span></div></header>
  <section class="dashboard" aria-label="Painel do bot">
  <div class="hero">
@@ -73,6 +69,10 @@
  <section class="panel" role="dialog" aria-modal="true" aria-labelledby="panel-title">
  <div class="panel-heading"><div><span class="eyebrow" id="panel-eyebrow">DO SEU JEITO</span><h2 id="panel-title">Configurações</h2></div><button class="icon-button" id="close-panel" aria-label="Fechar"><svg><use href="#i-close"/></svg></button></div>
  <div id="settings-panel" class="panel-body" hidden>
+  <section class="updates-card" aria-label="Atualizações oficiais">
+   <div><strong>Atualizações · MarlicoBot 1.3.3</strong><p id="update-status" role="status">Consultando atualizações…</p></div>
+   <div class="update-actions"><button class="secondary" id="update-check">Verificar</button><button class="primary" id="update-download" hidden>Baixar atualização</button><button class="secondary" id="update-install" hidden>Instalar download</button></div>
+  </section>
   <button class="import-box" id="import-button"><span class="import-icon"><svg><use href="#i-import"/></svg></span><span><strong>Importar configuração do bot</strong><small>Selecione o arquivo .env com os dados do Telegram.</small></span><svg><use href="#i-arrow"/></svg></button>
    <div class="form-divider"><span>ou configure os dados abaixo</span></div>
   <form id="config-form">
@@ -87,11 +87,11 @@
  </div>
  <div id="activity-panel" class="panel-body" hidden><p class="panel-description">Os últimos 30 eventos deste dispositivo. Seu token nunca aparece aqui.</p><div id="all-events"></div></div>
  <div id="monitor-panel" class="panel-body" hidden>
-  <p class="panel-description">Dados de leitura do Windows, atualizados quando você pedir. Capturar a tela sempre exige aprovação no próprio computador.</p>
+  <p class="panel-description">Dados de leitura do Windows, atualizados quando você pedir. No agente Windows, você pode confirmar localmente a opção “Permitir acesso à tela sem supervisão” para dispensar novas aprovações.</p>
   <div id="monitor-pairing-help" class="settings-note pairing-needed" hidden><svg><use href="#i-help"/></svg><div><strong>Este Android ainda não está pareado com o PC</strong><p>Confira o IP do Windows em Configurações e toque abaixo. Depois, aceite o pedido que aparecerá na tela do computador.</p><button class="primary" id="monitor-pair-agent" type="button">Parear pela rede local</button></div></div>
   <div id="monitor-content">
   <div class="screen-actions"><label for="screen-monitor">Tela do PC</label><select id="screen-monitor"><option value="0">Monitor 1</option></select><button class="primary" id="start-live-screen">Acesso remoto</button><button class="secondary" id="stop-live-screen" disabled>Parar</button><button class="secondary" id="capture-screen">Foto única</button><button class="secondary" id="zoom-out" aria-label="Diminuir zoom">−</button><button class="secondary" id="zoom-reset">100%</button><button class="secondary" id="zoom-in" aria-label="Aumentar zoom">+</button></div>
-  <div class="screen-view" id="screen-view"><div id="screen-message" role="status">Toque em Acesso remoto para visualizar o computador.</div><img id="pc-screen" alt="Tela compartilhada do computador" hidden></div><div class="screen-actions"><button class="secondary" id="expand-screen">Ampliar visualização</button><button class="danger" id="shutdown-pc">Desligar PC</button><button class="secondary" id="cancel-shutdown">Cancelar desligamento</button></div><p class="panel-description">No primeiro acesso, aprove a solicitação no Windows. O app Android precisa estar na mesma rede do PC para abrir a tela ao vivo; fora dela, use as opções remotas no Telegram.</p>
+  <div class="screen-view" id="screen-view"><div id="screen-message" role="status">Toque em Acesso remoto para visualizar o computador.</div><img id="pc-screen" alt="Tela compartilhada do computador" hidden></div><div class="screen-actions"><button class="secondary" id="expand-screen">Ampliar visualização</button><button class="danger" id="shutdown-pc">Desligar PC</button><button class="secondary" id="cancel-shutdown">Cancelar desligamento</button></div><p class="panel-description">A opção “Permitir acesso à tela sem supervisão” é ativada ou revogada no agente Windows, com confirmação local inicial. Depois, vale para a tela ao vivo neste app e para fotos únicas pelo Telegram. A tela ao vivo exige a mesma rede local; o Telegram envia uma foto, sem vídeo ao vivo.</p>
   <div class="form-grid monitor-grid"><div class="monitor-stat"><small>CPU</small><strong id="m-cpu">—</strong></div><div class="monitor-stat"><small>MEMÓRIA</small><strong id="m-memory">—</strong></div><div class="monitor-stat"><small>ARMAZENAMENTO</small><strong id="m-disk">—</strong></div><div class="monitor-stat"><small>PC LIGADO HÁ</small><strong id="m-uptime">—</strong></div></div>
   <div class="monitor-window"><small>JANELA ATIVA</small><strong id="m-window">—</strong></div>
   <div class="form-actions"><button class="secondary" id="refresh-monitor">Atualizar status</button><button class="secondary" id="refresh-processes">Ver programas abertos</button><button class="secondary" id="refresh-inventory">Hardware e programas instalados</button></div>

@@ -8,7 +8,7 @@ INÍCIO
 5. Clique em “Permitir conexão da rede local” e aceite o UAC do Windows.
 6. No MarlicoBot Android, abra Monitorar PC → Parear pela rede local.
 7. Aprove o pedido de pareamento que aparecerá na tela do Windows. Não é necessário exportar nem transferir arquivo de pareamento.
-8. Para uma foto da tela, peça “Print da tela” no Telegram e aprove cada pedido na confirmação visível neste computador.
+8. Para uma foto da tela, peça “Print da tela” no Telegram. Por padrão, aprove o pedido neste computador. A opção local de acesso sem supervisão pode dispensar essa confirmação nos próximos pedidos.
 
 O instalador não está assinado por um publicador verificado. O UAC é separado do Microsoft Defender SmartScreen e não remove avisos de reputação. Não desative a proteção do Windows para instalar.
 
@@ -16,14 +16,14 @@ O Android na mesma rede local pode abrir o painel “Monitorar PC”. Para consu
 
 PRIVACIDADE
 - Aparelhos pareados consultam métricas e podem solicitar desligamento forçado com confirmação. Alterações não salvas serão perdidas. Há 30 segundos para cancelar.
-- A captura da tela principal é única e só acontece após clicar “Sim” na confirmação visível do Windows; a autorização administrativa da instalação não ativa captura automática.
+- A captura da tela principal é única. Por padrão, cada pedido exige confirmação visível do Windows. A pessoa no PC pode ativar e revogar “Permitir acesso à tela sem supervisão” no agente; a autorização administrativa da instalação não ativa essa opção.
 - Não encaminhe a porta 8765 para a internet.
 - A chave de pareamento é enviada pela rede local após aprovação na tela do Windows.
 - Fechar a janela apenas a oculta na bandeja. No menu do ícone, escolha “Sair e parar o monitoramento” para parar o agente até o próximo login.
 - O inventário lista os aplicativos clássicos registrados pelo Windows; números de série não são coletados.
 - Desinstale em Configurações do Windows → Aplicativos instalados → MarlicoBot PC. As preferências de pareamento permanecem em AppData.
 
-VERSÃO 1.3.2
-Acesso remoto: visualização da tela, sem controle de mouse ou teclado. Autorize no PC ou ative a permissão contínua. Use o botão Parar para encerrar.
+VERSÃO 1.3.3
+Acesso remoto: visualização da tela, sem controle de mouse ou teclado. Autorize no PC ou ative localmente o acesso à tela sem supervisão para futuros pedidos do app e fotos únicas pelo Telegram. Use o botão Parar para encerrar uma transmissão.
 Desligamento: solicite no aplicativo ou /desligar no Telegram. Para cancelar, use /cancelar_desligamento ou o botão na aba Privacidade e conexão.
 

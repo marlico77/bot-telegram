@@ -4,7 +4,7 @@ Aplicativo Android para TV Box e celular. Recebe comandos do Telegram na TV Box,
 
 ## Instalação
 
-1. Copie `dist/MarlicoBot-1.3.2.apk` para o pendrive. Instale por cima da versão anterior sem desinstalá-la, para manter as configurações.
+1. Copie `dist/MarlicoBot-1.3.3.apk` para o pendrive. Instale por cima da versão anterior sem desinstalá-la, para manter as configurações.
 2. Na TV Box, abra o APK com o gerenciador de arquivos e permita a instalação por essa fonte se o Android solicitar.
 3. Se ainda não configurou o bot, importe o `.env` já usado. Para parear com o PC, abra **Monitorar PC → Parear pela rede local** e aprove o pedido na tela do Windows.
 4. Pare o bot antigo no Termux com **Ctrl+C** e encerre qualquer cópia no PC.
@@ -15,7 +15,7 @@ O IP privado do PC precisa estar correto nas configurações do app. A chave do 
 
 ## Uso e comportamento
 
-- Toda mensagem privada de um usuário autorizado recebe uma saudação conforme o horário de Brasília, seguida de **Menu**. Quando o agente autenticado responde, o Telegram mostra **Computador ligado** e remove **Ligar PC**; caso contrário, o menu oferece Wake-on-LAN. O menu também tem **Métricas**, **Programas abertos** e **Print da tela**. Os comandos `/metricas`, `/programas`, `/print` e `/ligar` funcionam pelo Telegram de fora da rede, desde que a TV Box esteja ligada, na rede do PC e com o bot conectado. Grupos e usuários não autorizados são ignorados.
+- Toda mensagem privada de um usuário autorizado recebe uma saudação conforme o horário de Brasília, seguida de **Menu**. As opções ficam uma abaixo da outra. Quando o agente autenticado responde, o Telegram mostra **Computador ligado** e remove **Ligar PC**; caso contrário, o menu oferece Wake-on-LAN. Após cada ação, o bot informa o resultado real e oferece **Menu** novamente. Os comandos `/metricas`, `/programas`, `/print` e `/ligar` funcionam pelo Telegram de fora da rede, desde que a TV Box esteja ligada, na rede do PC e com o bot conectado. Grupos e usuários não autorizados são ignorados.
 - No Telegram e no botão local, o app tenta confirmar por até 45 segundos que o PC responde ao ping ou à porta TCP configurada. Só informa que está ligado quando recebe uma resposta. Se nenhum teste responder, informa que o sinal foi enviado, mas o estado não pôde ser confirmado; firewall e regras de rede podem bloquear esses testes.
 - O botão local **Ligar PC** envia o sinal e verifica o IP configurado. Há uma espera de 10 segundos entre envios para evitar cliques repetidos.
 - Fechar a tela do app mantém o serviço ativo. **Pausar** encerra o serviço e impede a retomada automática até uma nova conexão.
@@ -32,9 +32,9 @@ Instale `dist/MarlicoBotPC-Setup.exe` no Windows 11. O agente consulta CPU, mem�
 
 No Windows, escolha **Permitir conexão da rede local** e aprove o pedido do UAC para liberar apenas a sub-rede local na porta TCP 8765. No app, inicie **Parear pela rede local**; aceite no Windows o pedido que você iniciou. O agente precisa continuar aberto.
 
-Para ver a tela ao vivo, no painel Android abra **Monitorar PC**, escolha o monitor e toque em **Acesso remoto**. Na primeira solicitação, o Windows exibe uma confirmação para aquela sessão; marque a permissão persistente no agente se quiser permitir solicitações futuras sem confirmação. Um aviso fica visível no PC e a pessoa pode parar pelo agente ou pelo app. O app Android precisa estar na mesma rede local que o PC; fora dela, use **Print da tela** no Telegram para uma captura única com aprovação no Windows. O vídeo é atualizado em quadros, com zoom e seleção de monitor; não há controle de mouse/teclado.
+Para ver a tela ao vivo, no painel Android abra **Monitorar PC**, escolha o monitor e toque em **Acesso remoto**. Por padrão, o Windows exibe uma confirmação para aquela sessão. A pessoa no PC pode ativar localmente **Permitir acesso à tela sem supervisão** para dispensar confirmações futuras, tanto da visualização no app quanto da foto única pelo Telegram; pode revogar a opção no agente. Um aviso fica visível no PC durante a transmissão e a pessoa pode pará-la pelo agente ou pelo app. O app Android precisa estar na mesma rede local que o PC; fora dela, use **Print da tela** no Telegram para uma captura única. O vídeo é atualizado em quadros, com zoom e seleção de monitor; não há controle de mouse/teclado.
 
-Uma captura da tela principal nunca ocorre em segundo plano: cada pedido do Telegram ou do painel Android exibe uma caixa de confirmação no Windows. **Sim** envia uma imagem única reduzida; **Não** ou falta de resposta cancela. A captura não é uma transmissão contínua. Para comandos remotos via Telegram fora de casa, a TV Box deve estar ligada, pareada e conectada ao PC pela rede local. O painel do APK no celular só consulta o PC quando o celular está na mesma rede local; acesso pelo celular fora de casa não usa VPN.
+Por padrão, cada pedido de foto única do Telegram ou do painel Android exibe uma caixa de confirmação no Windows. Com o acesso sem supervisão ativado localmente, um pedido autenticado envia a imagem sem repetir a caixa; a captura continua sendo única, não uma transmissão contínua. Para comandos remotos via Telegram fora de casa, a TV Box deve estar ligada, pareada e conectada ao PC pela rede local. O painel do APK no celular só consulta o PC quando o celular está na mesma rede local; acesso pelo celular fora de casa não usa VPN.
 
 O agente usa HTTP com autenticação aleatória apenas na rede local, protegido também pela regra de firewall sugerida. Não encaminhe a porta 8765 no roteador nem use uma rede Wi-Fi pública para parear. A implementação ainda precisa ser verificada no Windows e na TV Box físicos do usuário.
 

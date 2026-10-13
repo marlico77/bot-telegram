@@ -4,14 +4,14 @@ Aplicativo Android para TV Box e celular. Recebe comandos do Telegram na TV Box,
 
 ## Instalação
 
-1. Copie `dist/MarlicoBot-1.3.3.apk` para o pendrive. Instale por cima da versão anterior sem desinstalá-la, para manter as configurações.
+1. Copie `dist/MarlicoBot-1.3.4.apk` para o pendrive. Instale por cima da versão anterior sem desinstalá-la, para manter as configurações.
 2. Na TV Box, abra o APK com o gerenciador de arquivos e permita a instalação por essa fonte se o Android solicitar.
 3. Se ainda não configurou o bot, importe o `.env` já usado. Para parear com o PC, abra **Monitorar PC → Parear pela rede local** e aprove o pedido na tela do Windows.
 4. Pare o bot antigo no Termux com **Ctrl+C** e encerre qualquer cópia no PC.
 5. Toque em **Conectar bot** e permita as notificações, se solicitado.
 6. Quando aparecer **Bot conectado**, envie uma mensagem ao bot e toque em **Menu**. As opções permitem ligar o PC, consultar o status, listar processos e pedir uma captura da tela.
 
-O IP privado do PC precisa estar correto nas configurações do app. A chave do agente é recebida pela rede somente após aprovação na tela do Windows e armazenada com Android Keystore. O agente só é consultado por um IP privado; no celular, o painel de monitoramento funciona quando ele está na mesma rede do PC. Para evitar conflito de long polling, conecte a conta do bot apenas na TV Box; no celular, pareie pela rede e use o painel sem tocar em **Conectar bot**.
+O IP privado do PC precisa estar correto nas configurações do app. A chave do agente é recebida pela rede somente após aprovação na tela do Windows e armazenada com Android Keystore. O painel usa o IP local na mesma LAN ou o IP 100.x do PC pelo Tailscale ativo. Para evitar conflito de long polling, conecte a conta do bot apenas na TV Box; no celular, pareie pela rede e use o painel sem tocar em **Conectar bot**.
 
 ## Uso e comportamento
 
@@ -28,15 +28,24 @@ O IP privado do PC precisa estar correto nas configurações do app. A chave do 
 
 ## Monitoramento e agente Windows
 
-Instale `dist/MarlicoBotPC-Setup.exe` no Windows 11. O agente consulta CPU, memória, armazenamento, tempo ligado, processos, título da janela ativa, versão do Windows e inventário de hardware e programas. Não tem comandos para mover o mouse, digitar, executar programas, ler arquivos ou alterar configurações.
+Instale `dist/MarlicoBotPC-Setup.msi` no Windows 11. O agente consulta CPU, memória, armazenamento, tempo ligado, processos, título da janela ativa, versão do Windows e inventário de hardware e programas. Não tem comandos para mover o mouse, digitar, executar programas, ler arquivos ou alterar configurações.
 
-No Windows, escolha **Permitir conexão da rede local** e aprove o pedido do UAC para liberar apenas a sub-rede local na porta TCP 8765. No app, inicie **Parear pela rede local**; aceite no Windows o pedido que você iniciou. O agente precisa continuar aberto.
+No Windows, escolha **Permitir rede privada** e aprove o pedido do UAC para liberar a sub-rede local e os endereços Tailscale na porta TCP 8765. No app, inicie **Parear pela rede local**; aceite no Windows o pedido que você iniciou. O agente precisa continuar aberto.
 
-Para ver a tela ao vivo, no painel Android abra **Monitorar PC**, escolha o monitor e toque em **Acesso remoto**. Por padrão, o Windows exibe uma confirmação para aquela sessão. A pessoa no PC pode ativar localmente **Permitir acesso à tela sem supervisão** para dispensar confirmações futuras, tanto da visualização no app quanto da foto única pelo Telegram; pode revogar a opção no agente. Um aviso fica visível no PC durante a transmissão e a pessoa pode pará-la pelo agente ou pelo app. O app Android precisa estar na mesma rede local que o PC; fora dela, use **Print da tela** no Telegram para uma captura única. O vídeo é atualizado em quadros, com zoom e seleção de monitor; não há controle de mouse/teclado.
+Para ver a tela ao vivo, no painel Android abra **Monitorar PC**, escolha o monitor e toque em **Acesso remoto**. Por padrão, o Windows exibe uma confirmação para aquela sessão. A pessoa no PC pode ativar localmente **Permitir acesso à tela sem supervisão** para dispensar confirmações futuras, tanto da visualização no app quanto da foto única pelo Telegram; pode revogar a opção no agente. Um aviso fica visível no PC durante a transmissão e a pessoa pode pará-la pelo agente ou pelo app. O vídeo é atualizado em quadros, com zoom e seleção de monitor; não há controle de mouse/teclado.
 
-Por padrão, cada pedido de foto única do Telegram ou do painel Android exibe uma caixa de confirmação no Windows. Com o acesso sem supervisão ativado localmente, um pedido autenticado envia a imagem sem repetir a caixa; a captura continua sendo única, não uma transmissão contínua. Para comandos remotos via Telegram fora de casa, a TV Box deve estar ligada, pareada e conectada ao PC pela rede local. O painel do APK no celular só consulta o PC quando o celular está na mesma rede local; acesso pelo celular fora de casa não usa VPN.
+### Fora da rede local
 
-O agente usa HTTP com autenticação aleatória apenas na rede local, protegido também pela regra de firewall sugerida. Não encaminhe a porta 8765 no roteador nem use uma rede Wi-Fi pública para parear. A implementação ainda precisa ser verificada no Windows e na TV Box físicos do usuário.
+1. Pareie o celular e o PC enquanto ambos estiverem na mesma LAN. Cada Android guarda sua própria chave; a instalação da TV Box não pareia o celular automaticamente.
+2. Instale o [Tailscale no PC Windows](https://tailscale.com/docs/install/windows) e no [celular ou Android TV](https://tailscale.com/docs/install/android). Entre na mesma rede privada nos dois dispositivos e mantenha a VPN conectada.
+3. No agente Windows, clique em **Permitir rede privada** para atualizar a regra do firewall. Reinicie o agente se o Tailscale foi instalado depois de abri-lo; o seletor de IP mostrará o endereço `100.x.y.z` do PC.
+4. No Android, abra **Configurações**, troque **IP do computador** pelo IP Tailscale do PC e salve. Abra **Monitorar PC → Acesso remoto** em outra rede, como dados móveis.
+
+O app só envia o segredo de pareamento para esse endereço quando detecta uma VPN com IP Tailscale no Android. Sem Tailscale ativo, a conexão remota falha imediatamente. Não abra a porta 8765 no roteador. O Wake-on-LAN continua dependendo de um dispositivo dentro da rede da casa, como a TV Box; a conexão remota exige que o PC já esteja ligado.
+
+Por padrão, cada pedido de foto única do Telegram ou do painel Android exibe uma caixa de confirmação no Windows. Com o acesso sem supervisão ativado localmente, um pedido autenticado envia a imagem sem repetir a caixa; a captura continua sendo única, não uma transmissão contínua. Para comandos remotos via Telegram fora de casa, a TV Box deve estar ligada, pareada e conectada ao PC pela rede local, ou ambos devem estar no mesmo Tailscale com o IP 100.x configurado na TV Box.
+
+O agente usa HTTP com autenticação aleatória na LAN; fora dela, o tráfego passa pelo túnel criptografado do Tailscale. A regra de firewall continua restrita à sub-rede local e ao Tailscale. Não encaminhe a porta 8765 no roteador nem use uma rede Wi-Fi pública para parear. A implementação ainda precisa ser verificada no Windows e nos aparelhos Android físicos do usuário.
 
 ## Execução em segundo plano
 
@@ -112,7 +121,7 @@ A verificação de IP, validações e respostas TCP positivas/negativas passaram
 
 No menu do Telegram há **Status do PC**, **Programas abertos** e **Ver tela**, além de **Ligar PC**. O status contém CPU, memória, armazenamento agregado, uptime e janela ativa. A lista detalha nomes/PIDs e memória dos processos. A captura de tela é uma imagem única: o app Windows mostra uma janela de confirmação local e só envia depois de um clique em **Sim**. Não há vídeo contínuo nem comandos de teclado, mouse, shell ou abertura de programas.
 
-O celular pode abrir **Monitorar PC** e atualizar status/processos enquanto estiver na mesma rede do PC. Para consulta de fora de casa, use o menu do Telegram por meio da TV Box; o painel Android não cria acesso remoto/VPN. Para evitar conflitos, mantenha o long polling do bot somente na TV Box; a instalação do APK no celular serve para o painel local e não deve ser conectada ao mesmo bot.
+O celular pode abrir **Monitorar PC** na mesma LAN ou, a partir da versão 1.3.4, em outra rede pelo Tailscale configurado nos dois aparelhos. Para evitar conflitos, mantenha o long polling do bot somente na TV Box; a instalação do APK no celular serve para o painel e não deve ser conectada ao mesmo bot.
 
 As verificações locais passaram: 132 validações WOL/configuração, 33 regras de horário e callbacks, verificação de navegação e layout em 390×844, 960×540, 1280×720 e 1920×1080, mais 6 verificações HTTP do agente (autorização, JSON, lista de processos, captura protegida e ausência de endpoint de controle). Os instaladores foram compilados e suas assinaturas/alinhamento conferidos. Ainda não foram executados nem pareados na TV Box e no PC físicos do usuário; o primeiro status e a aprovação real da captura dependem dessa instalação.
 

@@ -1,18 +1,39 @@
 package br.com.marlico.bot;
 
+import android.content.Context;
+import android.net.ConnectivityManager;
+import android.net.LinkAddress;
+import android.net.LinkProperties;
+import android.net.Network;
+import android.net.NetworkCapabilities;
 import org.json.JSONObject;
 import java.io.*;
 import java.net.*;
 import java.nio.charset.StandardCharsets;
 
-/** Read-only client for the paired Windows companion, restricted to private LAN IPv4 addresses. */
+/** Read-only client for the paired Windows companion over LAN or a private Tailscale tunnel. */
 public final class AgentApi {
     private AgentApi() {}
+    private static HttpURLConnection connection(Config cfg,URL url,boolean tailnet) throws Exception {
+        if(!tailnet)return (HttpURLConnection)url.openConnection();
+        Context context=cfg.runtimeContext;
+        if(context==null)throw new IOException("Abra o aplicativo para ativar a conexão remota.");
+        ConnectivityManager manager=(ConnectivityManager)context.getSystemService(Context.CONNECTIVITY_SERVICE);
+        if(manager!=null)for(Network network:manager.getAllNetworks()) {
+            NetworkCapabilities capabilities=manager.getNetworkCapabilities(network);
+            LinkProperties properties=manager.getLinkProperties(network);
+            if(capabilities==null||!capabilities.hasTransport(NetworkCapabilities.TRANSPORT_VPN)||properties==null)continue;
+            for(LinkAddress address:properties.getLinkAddresses())if(Core.tailnetIpv4(address.getAddress().getHostAddress()))
+                return (HttpURLConnection)network.openConnection(url);
+        }
+        throw new IOException("Ative o Tailscale neste aparelho e entre na mesma rede privada do PC.");
+    }
     private static HttpURLConnection open(Config cfg,String path) throws Exception {
         if(cfg.agentToken==null||cfg.agentToken.length()<40)throw new IOException("Pareie o agente Windows antes de consultar o PC.");
         InetAddress host=InetAddress.getByName(Core.hostIpv4(cfg.pcIp));
-        if(!host.isSiteLocalAddress())throw new IOException("O agente só pode ser acessado pela rede local privada.");
-        HttpURLConnection c=(HttpURLConnection)new URL("http://"+host.getHostAddress()+":"+cfg.agentPort+path).openConnection();
+        boolean tailnet=Core.tailnetIpv4(host.getHostAddress());
+        if(!host.isSiteLocalAddress()&&!tailnet)throw new IOException("Use o IP local do PC ou o IP privado do Tailscale.");
+        HttpURLConnection c=connection(cfg,new URL("http://"+host.getHostAddress()+":"+cfg.agentPort+path),tailnet);
         c.setRequestMethod("GET");c.setConnectTimeout(5000);c.setReadTimeout(path.startsWith("/api/screen")||path.equals("/api/inventory")?35000:8000);c.setInstanceFollowRedirects(false);c.setUseCaches(false);c.setRequestProperty("Authorization","Bearer "+cfg.agentToken);c.setRequestProperty("Cache-Control","no-store");return c;
     }
     private static byte[] read(HttpURLConnection c,int limit) throws Exception {
@@ -26,7 +47,7 @@ public final class AgentApi {
         try{c.setRequestMethod("POST");c.setConnectTimeout(5000);c.setReadTimeout(95000);c.setDoOutput(true);c.setRequestProperty("Content-Type","text/plain; charset=utf-8");try(OutputStream out=c.getOutputStream()){out.write("MarlicoBot Android pairing request".getBytes(StandardCharsets.UTF_8));}return new JSONObject(new String(read(c,8192),"UTF-8"));}finally{c.disconnect();}
     }
     public static boolean isOnline(Config cfg) {
-        HttpURLConnection c=null;try{if(cfg.agentToken==null||cfg.agentToken.length()<40)return false;InetAddress host=InetAddress.getByName(Core.hostIpv4(cfg.pcIp));if(!host.isSiteLocalAddress())return false;c=(HttpURLConnection)new URL("http://"+host.getHostAddress()+":"+Core.port(""+cfg.agentPort)+"/api/status").openConnection();c.setRequestMethod("GET");c.setConnectTimeout(1200);c.setReadTimeout(1200);c.setUseCaches(false);c.setRequestProperty("Authorization","Bearer "+cfg.agentToken);return c.getResponseCode()==200;}catch(Exception ignored){return false;}finally{if(c!=null)c.disconnect();}
+        HttpURLConnection c=null;try{c=open(cfg,"/api/status");c.setConnectTimeout(1200);c.setReadTimeout(1200);return c.getResponseCode()==200;}catch(Exception ignored){return false;}finally{if(c!=null)c.disconnect();}
     }
     public static final class AgentException extends IOException { public final int status; AgentException(int status,String message){super(message);this.status=status;} }
     public static JSONObject post(Config cfg,String path,String body)throws Exception {
@@ -55,6 +76,6 @@ public final class AgentApi {
         HttpURLConnection c=open(cfg,"/api/screen/live?monitor="+Math.max(0,monitor));c.setReadTimeout(12000);c.setRequestProperty("X-View-Session",session);try{return image(c,"continuous");}finally{c.disconnect();}
     }    public static String bytes(long value){if(value<0)return "indisponível";String[] u={"B","KB","MB","GB","TB"};double n=value;int i=0;while(n>=1024&&i<u.length-1){n/=1024;i++;}return i==0?value+" "+u[i]:String.format(java.util.Locale.US,"%.1f %s",n,u[i]);}
     public static String duration(long seconds){if(seconds<0)return "indisponível";long d=seconds/86400,h=seconds/3600%24,m=seconds/60%60;return d+"d "+h+"h "+m+"min";}
-    public static String statusText(JSONObject o){double cpu=o.optDouble("cpuPercent",-1);return "🖥 "+o.optString("computer","Windows PC")+"\n⚙️ CPU: "+(cpu<0?"indisponível":String.format(java.util.Locale.US,"%.0f%%",cpu))+"\n🧠 Memória: "+bytes(o.optLong("memoryUsedBytes",-1))+" / "+bytes(o.optLong("memoryTotalBytes",-1))+"\n💽 Armazenamento: "+bytes(o.optLong("diskUsedBytes",-1))+" / "+bytes(o.optLong("diskTotalBytes",-1))+"\n⏱ Ligado há: "+duration(o.optLong("uptimeSeconds",-1))+"\n🪟 Janela ativa: "+o.optString("activeWindow","indisponível")+"\n\nAtualizado: "+o.optString("capturedAt","");}
+    public static String statusText(JSONObject o){double cpu=o.optDouble("cpuPercent",-1),gpu=o.optDouble("gpuPercent",-1);return "🖥 "+o.optString("computer","Windows PC")+"\n⚙️ CPU: "+(cpu<0?"indisponível":String.format(java.util.Locale.US,"%.0f%%",cpu))+"\n🧠 Memória: "+bytes(o.optLong("memoryUsedBytes",-1))+" / "+bytes(o.optLong("memoryTotalBytes",-1))+"\n💽 Armazenamento: "+bytes(o.optLong("diskUsedBytes",-1))+" / "+bytes(o.optLong("diskTotalBytes",-1))+"\n🎮 GPU: "+o.optString("gpuName","não identificada")+" · "+(gpu<0?"uso indisponível":String.format(java.util.Locale.US,"%.0f%%",gpu))+"\n📊 Memória dedicada GPU: "+bytes(o.optLong("gpuMemoryDedicatedUsedBytes",-1))+"\n⏱ Ligado há: "+duration(o.optLong("uptimeSeconds",-1))+"\n🪟 Janela ativa: "+o.optString("activeWindow","indisponível")+"\n\nAtualizado: "+o.optString("capturedAt","");}
 }
 

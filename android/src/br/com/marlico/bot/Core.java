@@ -49,9 +49,19 @@ public final class Core {
     public static String hostIpv4(String value) {
         String ip=ipv4(value);
         String[] octets=ip.split("\\.");
-        if(ip.equals("255.255.255.255")||Integer.parseInt(octets[3])==255||Integer.parseInt(octets[3])==0)
+        if(ip.equals("255.255.255.255")||(!tailnetIpv4(ip)&&(Integer.parseInt(octets[3])==255||Integer.parseInt(octets[3])==0)))
             throw new IllegalArgumentException("Use o IP do PC, não o endereço de broadcast da rede.");
         return ip;
+    }
+    /** Tailscale IPv4 addresses occupy the shared 100.64.0.0/10 range. */
+    public static boolean tailnetIpv4(String ip) {
+        String[] parts=ip==null?new String[0]:ip.trim().split("\\.",-1);
+        if(parts.length!=4)return false;
+        try {
+            for(String part:parts)if(!part.matches("[0-9]{1,3}")||Integer.parseInt(part)>255)return false;
+            int second=Integer.parseInt(parts[1]);
+            return Integer.parseInt(parts[0])==100&&second>=64&&second<=127;
+        }catch(NumberFormatException e){return false;}
     }
     public static int port(String value) {
         try { int p=Integer.parseInt(value.trim()); if(p<1||p>65535) throw new NumberFormatException(); return p; }

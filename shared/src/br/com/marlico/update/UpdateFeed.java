@@ -20,7 +20,8 @@ public final class UpdateFeed {
             build=integer(r,"build");minimumBuild=integer(r,"minimumBuild");size=number(r,"size");
             if(version.length()>60||!sha256.matches("[a-fA-F0-9]{64}")||build<1||minimumBuild<0||minimumBuild>build||size<1||size>LIMIT)throw new IOException("Manifesto de atualização inválido.");
             URL u=new URL(url);
-            if(!"https".equals(u.getProtocol())||!"github.com".equals(u.getHost())||u.getUserInfo()!=null||u.getPort()!=-1||!u.getPath().startsWith("/marlico77/bot-telegram/releases/download/")||!u.getPath().endsWith(platform.equals("android")?".apk":".exe"))throw new IOException("Origem do instalador inválida.");
+            boolean suffix=platform.equals("android")?u.getPath().endsWith(".apk"):u.getPath().endsWith(".msi")||u.getPath().endsWith(".exe");
+            if(!"https".equals(u.getProtocol())||!"github.com".equals(u.getHost())||u.getUserInfo()!=null||u.getPort()!=-1||!u.getPath().startsWith("/marlico77/bot-telegram/releases/download/")||!suffix)throw new IOException("Origem do instalador inválida.");
         }
     }
     public static final class Result {

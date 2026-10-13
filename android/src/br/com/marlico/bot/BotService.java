@@ -5,7 +5,10 @@ import android.content.*;
 import android.content.pm.ServiceInfo;
 import android.os.*;
 import org.json.*;
+import java.io.IOException;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public final class BotService extends Service {
     private static final String CHANNEL="marlico.connection";
@@ -21,6 +24,9 @@ public final class BotService extends Service {
     private final Map<Long,Long> powerDeadlines=new HashMap<>();
     private final Map<Long,LinkedHashSet<Long>> offlineMenuMessages=new HashMap<>();
     private long nextMenuRefresh;
+    private long lastPcOnlineCheck;
+    private boolean lastPcOnline;
+    private final AtomicBoolean updateInProgress=new AtomicBoolean();
     private static final class PendingCheck {
         final long chat,message,deadline;
         final String nonce;
@@ -40,7 +46,6 @@ public final class BotService extends Service {
 
     public static boolean running() { BotService s=instance;return s!=null&&s.alive; }
     public static void start(Context c) {
-        if(AppUpdates.required(c))throw new IllegalArgumentException("Atualize o MarlicoBot antes de conectar.");
         if(!Config.load(c).ready()) throw new IllegalArgumentException("Importe seu .env antes de conectar.");
         Config.prefs(c).edit().putBoolean("enabled",true).apply();
         Intent i=new Intent(c,BotService.class);
@@ -110,7 +115,7 @@ public final class BotService extends Service {
         try {
             while(alive) {
                 try {
-                    if(AppUpdates.required(this)){report("error","Atualização obrigatória: abra o aplicativo para instalar.");Thread.sleep(5000);continue;}
+                    if(AppUpdates.required(this))report("error","Atualização obrigatória: use /atualizar ou abra o aplicativo.");
                     advanceCheck();
                     if(initialized)refreshOfflineMenus(cfg,nonce);
                     if(!initialized) {
@@ -123,10 +128,10 @@ public final class BotService extends Service {
                         JSONArray tail=api.call("getUpdates",params().put("offset",-1).put("limit",1).put("timeout",0)).getJSONArray("result");
                         if(tail.length()>0)offset=tail.getJSONObject(tail.length()-1).getLong("update_id")+1;
                         initialized=true;event(this,"good","Telegram conectado. Pronto para receber comandos.");
-                        report("online","Seu bot está pronto para receber comandos.");
+                        if(!AppUpdates.required(this))report("online","Seu bot está pronto para receber comandos.");
                     }
                     JSONArray updates=api.call("getUpdates",params().put("offset",offset).put("limit",20).put("timeout",pendingCheck==null?25:2)).getJSONArray("result");
-                    report("online","Seu bot está pronto para receber comandos.");
+                    if(!AppUpdates.required(this))report("online","Seu bot está pronto para receber comandos.");
                     failures=0;
                     Config.prefs(this).edit().putLong("lastContact",System.currentTimeMillis()).apply();
                     for(int i=0;i<updates.length()&&alive;i++) {
@@ -162,22 +167,31 @@ public final class BotService extends Service {
     private JSONObject keyboard(String nonce,Conversation.Action screen,boolean pcOnline) throws JSONException {
         JSONArray rows=new JSONArray();
         if(screen==Conversation.Action.MENU){
+            if(AppUpdates.required(this)){
+                rows.put(new JSONArray().put(button("⬆️ Atualizar aplicativos","update",nonce)));
+                return new JSONObject().put("inline_keyboard",rows);
+            }
             if(!pcOnline)rows.put(new JSONArray().put(button("⚡ Ligar PC","wake",nonce)));
             rows.put(new JSONArray().put(button("📊 Métricas","status",nonce)));
             rows.put(new JSONArray().put(button("📂 Programas abertos","programs",nonce)));
             rows.put(new JSONArray().put(button("📸 Print da tela","screen",nonce)));
             rows.put(new JSONArray().put(button("🧰 Hardware","inventory",nonce)));
+            rows.put(new JSONArray().put(button("⬆️ Atualizar aplicativos","update",nonce)));
             rows.put(new JSONArray().put(button("⏻ Desligar PC","shutdown",nonce)));
         } else rows.put(new JSONArray().put(new JSONObject().put("text","Menu").put("callback_data",Conversation.callback("menu",nonce))));
         return new JSONObject().put("inline_keyboard",rows);
     }
     private JSONObject button(String label,String action,String nonce)throws JSONException{return new JSONObject().put("text",label).put("callback_data",Conversation.callback(action,nonce));}
-    private boolean pcOnline(Config cfg){
-        if(AgentApi.isOnline(cfg))return true;
-        try{return Core.hostResponds(cfg.pcIp,cfg.pcCheckPort);}catch(Exception ignored){return false;}
+    private boolean pcOnline(Config cfg){return pcOnline(cfg,false);}
+    private boolean pcOnline(Config cfg,boolean force){
+        long now=SystemClock.elapsedRealtime();
+        if(!force&&lastPcOnlineCheck>0&&now-lastPcOnlineCheck<5000)return lastPcOnline;
+        boolean online=AgentApi.isOnline(cfg);
+        if(!online&&!Core.tailnetIpv4(cfg.pcIp))try{online=Core.hostResponds(cfg.pcIp,cfg.pcCheckPort);}catch(Exception ignored){}
+        lastPcOnline=online;lastPcOnlineCheck=SystemClock.elapsedRealtime();return online;
     }
     private void reply(long chat,long messageId,String text,String nonce,Conversation.Action screen) throws Exception {
-        boolean online=pcOnline(Config.load(this));String shown=online&&screen==Conversation.Action.MENU?"✅ Computador ligado.\n\n"+text:text;
+        boolean online=screen==Conversation.Action.MENU&&!AppUpdates.required(this)&&pcOnline(Config.load(this));String shown=online?"✅ Computador ligado.\n\n"+text:text;
         JSONObject p=new JSONObject().put("chat_id",chat).put("text",shown).put("reply_markup",keyboard(nonce,screen,online));
         if(messageId>0) {
             // Reuse the bot's own message as the user navigates, without filling the chat.
@@ -226,6 +240,15 @@ public final class BotService extends Service {
         JSONObject chat=message==null?null:message.optJSONObject("chat");
         if(chat==null||!"private".equals(chat.optString("type"))||chat.optLong("id")!=from.optLong("id"))return;
         long chatId=chat.getLong("id");
+        if(AppUpdates.required(this)){
+            Conversation.Action selected=cb==null?Conversation.Action.GREETING:Conversation.action(cb.optString("data"),nonce);
+            String incoming=cb==null&&message!=null?message.optString("text","").trim().toLowerCase(Locale.ROOT):"";
+            if(selected!=Conversation.Action.UPDATE&&selected!=Conversation.Action.MENU&&!incoming.startsWith("/atualizar")&&!incoming.startsWith("/update")){
+                if(cb!=null)api.call("answerCallbackQuery",new JSONObject().put("callback_query_id",cb.getString("id")));
+                replyQuiet(chatId,cb==null?0:message.optLong("message_id",0),"Atualização obrigatória. Toque em Atualizar aplicativos no menu ou envie /atualizar.",nonce);
+                return;
+            }
+        }
         if(cb!=null) {
             String callback=cb.optString("data","");
             if(callback.startsWith("power:")||callback.startsWith("abortpower:")){
@@ -249,11 +272,12 @@ public final class BotService extends Service {
             api.call("answerCallbackQuery",answer);
             long messageId=message.optLong("message_id",0);
             if(action==Conversation.Action.MENU)reply(chatId,messageId,Conversation.menu(cfg.displayName),nonce,Conversation.Action.MENU);
-            else if(action==Conversation.Action.WAKE){if(pcOnline(cfg))reply(chatId,messageId,"✅ Computador ligado. Não é necessário enviar o sinal de ligar.",nonce,Conversation.Action.GREETING);else wakeAndReply(chatId,messageId,cfg,nonce);}
+            else if(action==Conversation.Action.WAKE){if(pcOnline(cfg,true))reply(chatId,messageId,"✅ Computador ligado. Não é necessário enviar o sinal de ligar.",nonce,Conversation.Action.GREETING);else wakeAndReply(chatId,messageId,cfg,nonce);}
             else if(action==Conversation.Action.STATUS)showStatus(chatId,messageId,nonce);
             else if(action==Conversation.Action.PROGRAMS)showPrograms(chatId,messageId,nonce);
             else if(action==Conversation.Action.SCREEN)showScreen(chatId,messageId,nonce);
             else if(action==Conversation.Action.INVENTORY)showInventory(chatId,messageId,nonce);
+            else if(action==Conversation.Action.UPDATE)showUpdate(chatId,messageId,nonce);
             else if(action==Conversation.Action.SHUTDOWN)preparePower(chatId,nonce);
             else reply(chatId,messageId,Conversation.greeting(System.currentTimeMillis(),cfg.displayName),nonce,Conversation.Action.GREETING);
         } else {
@@ -262,8 +286,9 @@ public final class BotService extends Service {
             else if(command.equals("/programas")||command.equals("/processos"))showPrograms(chatId,0,nonce);
             else if(command.equals("/print")||command.equals("/print_tela")||command.equals("/screenshot"))showScreen(chatId,0,nonce);
             else if(command.equals("/desligar"))preparePower(chatId,nonce);
+            else if(command.equals("/atualizar")||command.equals("/update"))showUpdate(chatId,0,nonce);
             else if(command.equals("/cancelar_desligamento"))cancelPower(chatId,nonce);
-            else if(command.equals("/ligar")||command.equals("/wake")){if(pcOnline(cfg))reply(chatId,0,"✅ Computador ligado. Não é necessário enviar o sinal de ligar.",nonce,Conversation.Action.GREETING);else wakeAndReply(chatId,0,cfg,nonce);}
+            else if(command.equals("/ligar")||command.equals("/wake")){if(pcOnline(cfg,true))reply(chatId,0,"✅ Computador ligado. Não é necessário enviar o sinal de ligar.",nonce,Conversation.Action.GREETING);else wakeAndReply(chatId,0,cfg,nonce);}
             else reply(chatId,0,Conversation.greeting(System.currentTimeMillis(),cfg.displayName),nonce,Conversation.Action.GREETING);
         }
     }
@@ -276,7 +301,54 @@ public final class BotService extends Service {
     private void showStatus(long chat,long message,String nonce){try{JSONObject data=AgentApi.get(Config.load(this),"/api/status");reply(chat,message,"✅ Métricas consultadas.\n\n"+AgentApi.statusText(data),nonce,Conversation.Action.GREETING);event(this,"info","Status do PC consultado pelo Telegram.");}catch(Exception e){replyQuiet(chat,message,"⚠️ Não consegui consultar o PC. Confirme se o agente Windows está aberto, o IP está correto e o pareamento foi importado.",nonce);}}
     private void showPrograms(long chat,long message,String nonce){try{JSONArray list=AgentApi.get(Config.load(this),"/api/processes").optJSONArray("processes");StringBuilder out=new StringBuilder("✅ Consulta concluída.\n\n📂 Programas e processos ativos:\n");if(list==null||list.length()==0)out.append("Nenhum processo listado.");else for(int i=0;i<Math.min(list.length(),22);i++){JSONObject p=list.getJSONObject(i);out.append("• ").append(p.optString("name","Programa")).append(" · ").append(AgentApi.bytes(p.optLong("memoryBytes",0))).append("\n");}reply(chat,message,out.toString(),nonce,Conversation.Action.GREETING);event(this,"info","Lista de processos do PC consultada pelo Telegram.");}catch(Exception e){event(this,"warn","A consulta de processos falhou: "+(e.getMessage()==null?"erro de rede":e.getMessage()));replyQuiet(chat,message,"⚠️ Não consegui consultar os programas. Confira se o agente Windows está ativo, se o IP está correto e se o pareamento pela rede foi aprovado.",nonce);}}
     private void showInventory(long chat,long message,String nonce){try{JSONObject data=AgentApi.get(Config.load(this),"/api/inventory");JSONObject fields=data.optJSONObject("fields");StringBuilder out=new StringBuilder("✅ Inventário consultado.\n\n🧰 Inventário do computador\n");if(fields!=null){java.util.Iterator<String> keys=fields.keys();while(keys.hasNext()){String key=keys.next();String value=fields.optString(key,"");if(!value.isEmpty())out.append("• ").append(key).append(": ").append(value).append("\n");}}JSONArray apps=data.optJSONArray("installedPrograms");int count=apps==null?0:apps.length();out.append("\n📦 Aplicativos instalados (").append(count).append("):\n");if(apps!=null)for(int i=0;i<Math.min(count,12);i++){JSONObject app=apps.optJSONObject(i);if(app!=null)out.append("• ").append(app.optString("name","Aplicativo")).append(app.optString("version","").isEmpty()?"":" · "+app.optString("version")).append("\n");}if(count>12)out.append("… e mais ").append(count-12).append(". Veja a lista completa na aba Programas instalados do Windows.");reply(chat,message,out.toString(),nonce,Conversation.Action.GREETING);event(this,"info","Inventário de hardware e programas instalado consultado pelo Telegram.");}catch(Exception e){replyQuiet(chat,message,"⚠️ Não consegui consultar o inventário. Confirme que o agente Windows está aberto e o pareamento foi importado.",nonce);}}
-    private void showScreen(long chat,long message,String nonce){try{byte[] image=AgentApi.screen(Config.load(this));api.sendPhoto(chat,image,"Captura única do computador. Nenhum controle remoto está disponível.");reply(chat,message,"✅ Imagem capturada e enviada.",nonce,Conversation.Action.GREETING);event(this,"good","Captura única de tela autorizada no agente Windows e enviada ao Telegram.");}catch(Exception e){event(this,"warn","Captura única não concluída: "+(e.getMessage()==null?"erro de rede":e.getMessage()));replyQuiet(chat,message,"📷 A imagem não chegou. Confira a autorização de tela no Windows e aguarde o envio terminar. Detalhe: "+(e.getMessage()==null?"conexão indisponível":e.getMessage()),nonce);}}
+    private void showUpdate(long chat,long message,String nonce){
+        if(!updateInProgress.compareAndSet(false,true)){replyQuiet(chat,message,"Já estou verificando as atualizações. Aguarde a resposta no chat.",nonce);return;}
+        try{reply(chat,message,"Consultando versões oficiais para Android e Windows. Enviarei o resultado aqui.",nonce,Conversation.Action.GREETING);}
+        catch(Exception e){updateInProgress.set(false);return;}
+        Config cfg=Config.load(this);
+        AtomicInteger remaining=new AtomicInteger(2);
+        Runnable done=()->{if(remaining.decrementAndGet()==0)updateInProgress.set(false);};
+        new Thread(()->{
+            try{
+                try{
+                    int currentBuild=AgentApi.get(cfg,"/api/update").optInt("build",-1);
+                    JSONObject result=AgentApi.post(cfg,"/api/update","check-and-install");
+                    if(!result.optBoolean("accepted"))throw new IOException("O pedido não foi aceito pelo agente.");
+                    String status="Atualização iniciada; acompanhe a conclusão no agente Windows.";
+                    for(int attempt=0;attempt<24;attempt++){
+                        Thread.sleep(5000);
+                        try{
+                            JSONObject progress=AgentApi.get(cfg,"/api/update");
+                            if(progress.optInt("build",-1)>currentBuild){status="Nova versão instalada e agente reiniciado.";break;}
+                            status=progress.optString("status",status);
+                            if(!progress.optBoolean("busy",true))break;
+                        }catch(Exception connection){status="O agente ficou indisponível durante a instalação. Confira a nova versão quando ele reiniciar.";}
+                    }
+                    sendUpdateResult(cfg,chat,nonce,"Windows: "+status);
+                }catch(AgentApi.AgentException e){sendUpdateResult(cfg,chat,nonce,e.status==409?"Windows: já existe uma atualização em andamento.":"Windows: o agente recusou o pedido de atualização (HTTP "+e.status+").");}
+                catch(Exception e){sendUpdateResult(cfg,chat,nonce,"Windows: não consegui falar com o agente. Confira se o PC está ligado e acessível pela rede local ou pelo Tailscale.");}
+            }finally{done.run();}
+        },"telegram-windows-update").start();
+        new Thread(()->{try{sendUpdateResult(cfg,chat,nonce,AppUpdates.prepareFromTelegram(this));}finally{done.run();}},"telegram-android-update").start();
+    }
+    private void sendUpdateResult(Config cfg,long chat,String nonce,String text){
+        try{new TelegramApi(cfg.token).call("sendMessage",new JSONObject().put("chat_id",chat).put("text",text).put("reply_markup",keyboard(nonce,Conversation.Action.GREETING,false)));}
+        catch(Exception ignored){event(this,"warn","Não foi possível enviar o resultado da atualização ao Telegram.");}
+    }
+    private void showScreen(long chat,long message,String nonce){
+        Config cfg=Config.load(this);
+        try{
+            byte[] image=AgentApi.screen(cfg);
+            api.sendPhoto(chat,image,"");
+        }catch(Exception e){
+            event(this,"warn","Captura única não concluída: "+(e.getMessage()==null?"erro de rede":e.getMessage()));
+            replyQuiet(chat,message,"📷 A imagem não chegou. Confira a autorização de tela no Windows e aguarde o envio terminar. Detalhe: "+(e.getMessage()==null?"conexão indisponível":e.getMessage()),nonce);
+            return;
+        }
+        event(this,"good","Captura única de tela autorizada no agente Windows e enviada ao Telegram.");
+        try{reply(chat,0,Conversation.menu(cfg.displayName),nonce,Conversation.Action.MENU);}
+        catch(Exception e){event(this,"warn","O print foi enviado, mas o menu do Telegram não foi atualizado.");}
+    }
     private void replyQuiet(long chat,long message,String text,String nonce){try{reply(chat,message,text,nonce,Conversation.Action.GREETING);}catch(Exception ignored){try{JSONObject p=new JSONObject().put("chat_id",chat).put("text",text).put("reply_markup",keyboard(nonce,Conversation.Action.GREETING,false));api.call("sendMessage",p);}catch(Exception ignoredAgain){}}}
     private void wakeAndReply(long chat,long messageId,Config cfg,String nonce) throws Exception {
         WakeResult result;
@@ -296,6 +368,7 @@ public final class BotService extends Service {
         try {check.online=Core.hostResponds(check.config.pcIp,check.config.pcCheckPort);}
         catch(Exception ignored) {check.online=false;}
         if(Boolean.TRUE.equals(check.online)) {
+            lastPcOnline=true;lastPcOnlineCheck=SystemClock.elapsedRealtime();
             Config.prefs(this).edit().putString("pcState","online").putLong("pcStateAt",System.currentTimeMillis()).apply();
             event(this,"good","PC respondeu na rede local: ligado.");
             nextMenuRefresh=0;refreshOfflineMenus(check.config,check.nonce);

@@ -5,7 +5,7 @@ import java.util.TimeZone;
 
 /** Telegram conversation rules, independent of Android and the device's selected timezone. */
 public final class Conversation {
-    public enum Action { GREETING, MENU, WAKE, STATUS, PROGRAMS, SCREEN, INVENTORY, SHUTDOWN }
+    public enum Action { GREETING, MENU, WAKE, STATUS, PROGRAMS, SCREEN, INVENTORY, SHUTDOWN, UPDATE }
     private Conversation() {}
 
     public static String greeting(long epochMillis) { return greeting(epochMillis,""); }
@@ -32,6 +32,7 @@ public final class Conversation {
         if(callbackData.equals("screen"+suffix))return Action.SCREEN;
         if(callbackData.equals("inventory"+suffix))return Action.INVENTORY;
         if(callbackData.equals("shutdown"+suffix))return Action.SHUTDOWN;
+        if(callbackData.equals("update"+suffix))return Action.UPDATE;
         return Action.GREETING;
     }
 

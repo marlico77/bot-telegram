@@ -19,6 +19,9 @@ public final class MainActivity extends Activity {
     private final ExecutorService tasks=Executors.newSingleThreadExecutor();
     private final ExecutorService streamTasks=Executors.newSingleThreadExecutor();
     private final AtomicBoolean liveViewRunning=new AtomicBoolean();
+    private final Semaphore frameAcknowledged=new Semaphore(0);
+    private volatile long pendingFrameId;
+    private long nextFrameId;
     private final Handler handler=new Handler(Looper.getMainLooper());
     private boolean destroyed;
     private volatile int selectedMonitor;
@@ -49,7 +52,14 @@ public final class MainActivity extends Activity {
             return new WebResourceResponse(mime,"UTF-8",getAssets().open(file));
         }catch(Exception e){return new WebResourceResponse("text/plain","UTF-8",new ByteArrayInputStream(new byte[0]));}
     }
-    @Override public void onResume(){super.onResume();handler.post(ticker);}
+    @Override public void onResume(){super.onResume();handler.post(ticker);installRequestedUpdate();}
+    @Override protected void onNewIntent(Intent intent){super.onNewIntent(intent);setIntent(intent);installRequestedUpdate();}
+    private void installRequestedUpdate(){
+        Intent intent=getIntent();
+        if(intent==null||!AppUpdates.INSTALL_ACTION.equals(intent.getAction()))return;
+        intent.setAction(null);
+        handler.post(()->AppUpdates.installDownloaded(this));
+    }
     @Override public void onPause(){liveViewRunning.set(false);handler.removeCallbacks(ticker);super.onPause();}
     @Override public void onDestroy(){destroyed=true;liveViewRunning.set(false);handler.removeCallbacksAndMessages(null);tasks.shutdownNow();streamTasks.shutdownNow();if(web!=null){web.removeJavascriptInterface("Marlico");web.destroy();}super.onDestroy();}
     @Override public void onBackPressed(){web.evaluateJavascript("window.closePanel ? window.closePanel() : false",result->{if(!"true".equals(result))finish();});}
@@ -110,18 +120,22 @@ public final class MainActivity extends Activity {
         @JavascriptInterface public void inventory(){tasks.submit(()->{try{JSONObject value=AgentApi.get(Config.load(MainActivity.this),"/api/inventory");js("window.pcInventory("+value.toString()+")");}catch(Exception e){js("window.pcFailure("+JSONObject.quote(e.getMessage()==null?"Não foi possível consultar o inventário.":e.getMessage())+")");}});}
         @JavascriptInterface public void screen(int monitor){tasks.submit(()->{try{byte[] image=AgentApi.screen(Config.load(MainActivity.this),monitor);String encoded=android.util.Base64.encodeToString(image,android.util.Base64.NO_WRAP);js("window.pcScreen("+JSONObject.quote("data:image/jpeg;base64,"+encoded)+")");}catch(Exception e){js("window.pcFailure("+JSONObject.quote(e.getMessage()==null?"Captura recusada ou indisponível.":e.getMessage())+")");}});}
         @JavascriptInterface public void selectMonitor(int monitor){selectedMonitor=Math.max(0,monitor);}
+        @JavascriptInterface public void frameDisplayed(long frameId){if(frameId==pendingFrameId){pendingFrameId=0;frameAcknowledged.release();}}
         @JavascriptInterface public void startLiveScreen(int monitor){
             if(!liveViewRunning.compareAndSet(false,true))return;selectedMonitor=Math.max(0,monitor);
-            js("window.screenState('waiting','Aguardando autorização no Windows…')");
+            frameAcknowledged.drainPermits();pendingFrameId=0;
+            js("window.screenState('waiting','Conectando ao computador…')");
             streamTasks.submit(()->{Config cfg=Config.load(MainActivity.this);String session=null;int failures=0;boolean first=true;
                 try{session=AgentApi.liveStart(cfg,selectedMonitor);while(liveViewRunning.get()&&!Thread.currentThread().isInterrupted()){
                     try{byte[] image=AgentApi.liveFrame(cfg,selectedMonitor,session);if(!liveViewRunning.get())break;
                         String encoded=android.util.Base64.encodeToString(image,android.util.Base64.NO_WRAP);
-                        js("window.pcScreen("+JSONObject.quote("data:image/jpeg;base64,"+encoded)+")");
-                        if(first||failures>0)js("window.screenState('live','Tela ao vivo · somente visualização')");first=false;failures=0;Thread.sleep(180);
+                        long frameId=++nextFrameId;frameAcknowledged.drainPermits();pendingFrameId=frameId;
+                        js("window.pcScreen("+JSONObject.quote("data:image/jpeg;base64,"+encoded)+","+frameId+")");
+                        if(!frameAcknowledged.tryAcquire(2,TimeUnit.SECONDS))throw new IOException("A tela demorou a exibir o quadro recebido.");
+                        if(first||failures>0)js("window.screenState('live','Tela ao vivo · somente visualização')");first=false;failures=0;Thread.sleep(50);
                     }catch(Exception e){if(!liveViewRunning.get())break;if(e instanceof AgentApi.AgentException&&((AgentApi.AgentException)e).status!=429)throw e;if(++failures>3)throw e;js("window.screenState('retry','Conexão instável. Tentando recuperar a imagem…')");Thread.sleep(800);}
                 }}catch(Exception e){if(liveViewRunning.get())js("window.screenState('error',"+JSONObject.quote(e.getMessage()==null?"Não foi possível receber a tela.":e.getMessage())+")");}
-                finally{if(session!=null)try{AgentApi.liveStop(cfg,0,session);}catch(Exception ignored){}liveViewRunning.set(false);js("window.screenStopped()");}
+                finally{pendingFrameId=0;if(session!=null)try{AgentApi.liveStop(cfg,0,session);}catch(Exception ignored){}liveViewRunning.set(false);js("window.screenStopped()");}
             });
         }
         @JavascriptInterface public void stopLiveScreen(){liveViewRunning.set(false);}

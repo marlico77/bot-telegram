@@ -13,7 +13,8 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 final class AppUpdates {
-    static final int BUILD=15;
+    static final int BUILD=16;
+    static final String INSTALL_ACTION="br.com.marlico.bot.INSTALL_OFFICIAL_UPDATE";
     private static final ScheduledExecutorService worker=Executors.newSingleThreadScheduledExecutor();
     private static final AtomicBoolean checking=new AtomicBoolean(),downloading=new AtomicBoolean();
     private static volatile long checked;
@@ -39,7 +40,7 @@ final class AppUpdates {
                 UpdateFeed.Result result=UpdateFeed.check("android",BUILD);
                 if(!result.fresh)throw new IOException("Catálogo temporariamente desatualizado. Tentaremos novamente.");
                 if(result.release!=null){release=result.release;prefs(c).edit().putString("manifest",result.raw).putInt("minimum",release.minimumBuild).apply();}checked=System.currentTimeMillis();
-                message=available()?"Versão "+release.version+" disponível. Toque para baixar.":result.release==null?"Nenhuma versão publicada no catálogo.":"Você está usando a versão mais recente (1.3.3).";
+                message=available()?"Versão "+release.version+" disponível. Toque para baixar.":result.release==null?"Nenhuma versão publicada no catálogo.":"Você está usando a versão mais recente (1.3.4).";
                 if(available()&&prefs(c).getInt("notified",0)!=release.build){notifyUpdate(c);prefs(c).edit().putInt("notified",release.build).apply();}
             }catch(Exception e){message="Não foi possível consultar atualizações. Verifique a internet e tente novamente.";checked=System.currentTimeMillis()-5*3600000L;}
             finally{checking.set(false);}
@@ -51,6 +52,44 @@ final class AppUpdates {
             PendingIntent open=PendingIntent.getActivity(c,31,new Intent(c,MainActivity.class),PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_IMMUTABLE);
             Notification.Builder b=Build.VERSION.SDK_INT>=26?new Notification.Builder(c,channel):new Notification.Builder(c);
             n.notify(31,b.setSmallIcon(R.drawable.ic_notification).setContentTitle(required(c)?"Atualização obrigatória":"MarlicoBot · nova versão").setContentText(message).setContentIntent(open).setAutoCancel(true).build());
+        }catch(RuntimeException ignored){}
+    }
+    /** Called by the Telegram receiver on its own worker thread. Never launches an installer in the background. */
+    static String prepareFromTelegram(Context context){
+        Context c=context.getApplicationContext();
+        if(!checking.compareAndSet(false,true))return "Android: já estou consultando as versões oficiais.";
+        UpdateFeed.Release candidate;
+        try{
+            message="Consultando versões oficiais…";
+            UpdateFeed.Result result=UpdateFeed.check("android",BUILD);
+            if(!result.fresh)throw new IOException("Catálogo de versões temporariamente indisponível.");
+            candidate=result.release;
+            if(candidate!=null){release=candidate;prefs(c).edit().putString("manifest",result.raw).putInt("minimum",candidate.minimumBuild).apply();}
+            checked=System.currentTimeMillis();
+            if(candidate==null||candidate.build<=BUILD){message="Você está usando a versão mais recente.";return "Android: nenhuma atualização disponível.";}
+        }catch(Exception e){message="Não foi possível consultar atualizações. Verifique a internet e tente novamente.";return "Android: não consegui consultar as versões oficiais: "+e.getMessage();}
+        finally{checking.set(false);}
+        if(!downloading.compareAndSet(false,true))return "Android: o download de uma atualização já está em andamento.";
+        try{
+            File file=new File(c.getFilesDir(),"official-update.apk");
+            boolean valid=false;try{validate(c,candidate,file);valid=true;}catch(Exception ignored){}
+            if(!valid)UpdateFeed.download(candidate,file,p->message="Baixando atualização: "+p+"%");
+            validate(c,candidate,file);
+            message="Versão "+candidate.version+" pronta. Abra a notificação ou Configurações para confirmar a instalação.";
+            notifyInstall(c,candidate.version);
+            return "Android: versão "+candidate.version+" baixada e verificada. Abra a notificação no aparelho para confirmar a instalação exigida pelo Android.";
+        }catch(Exception e){message="Falha no download: "+e.getMessage();return "Android: não foi possível preparar a atualização: "+e.getMessage();}
+        finally{downloading.set(false);}
+    }
+    private static void notifyInstall(Context c,String version){
+        try{
+            NotificationManager manager=(NotificationManager)c.getSystemService(Context.NOTIFICATION_SERVICE);
+            String channel="marlico.updates";
+            if(Build.VERSION.SDK_INT>=26)manager.createNotificationChannel(new NotificationChannel(channel,"Atualizações do aplicativo",NotificationManager.IMPORTANCE_DEFAULT));
+            Intent open=new Intent(c,MainActivity.class).setAction(INSTALL_ACTION).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK|Intent.FLAG_ACTIVITY_CLEAR_TOP);
+            PendingIntent pending=PendingIntent.getActivity(c,32,open,PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_IMMUTABLE);
+            Notification.Builder b=Build.VERSION.SDK_INT>=26?new Notification.Builder(c,channel):new Notification.Builder(c);
+            manager.notify(32,b.setSmallIcon(R.drawable.ic_notification).setContentTitle("MarlicoBot "+version+" pronto para instalar").setContentText("Toque para confirmar a atualização no Android.").setContentIntent(pending).setAutoCancel(true).build());
         }catch(RuntimeException ignored){}
     }
     static void action(Activity a){
@@ -77,7 +116,7 @@ final class AppUpdates {
         try{Uri uri=Uri.parse("content://"+a.getPackageName()+".updates/official-update.apk");Intent i=new Intent(Intent.ACTION_VIEW).setDataAndType(uri,"application/vnd.android.package-archive").addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);i.setClipData(ClipData.newRawUri("Atualização MarlicoBot",uri));a.startActivity(i);}catch(Exception e){message="Instalador indisponível neste Android. Tente novamente ou baixe pelo site.";}
     }
     static void installDownloaded(Activity a){
-        UpdateFeed.Release r=release;if(r==null||r.build<=BUILD||busy()){action(a);return;}
+        UpdateFeed.Release r=release;if(r==null||r.build<=BUILD){action(a);return;}
         File file=new File(a.getFilesDir(),"official-update.apk");if(!file.exists()){action(a);return;}
         if(!downloading.compareAndSet(false,true))return;
         worker.execute(()->{try{validate(a,r,file);ui.post(()->{if(!a.isFinishing()&&!a.isDestroyed())install(a,r);});}catch(Exception e){message="Download inválido. Toque em Baixar para tentar novamente.";ui.post(()->{if(!a.isFinishing())action(a);});}finally{downloading.set(false);}});

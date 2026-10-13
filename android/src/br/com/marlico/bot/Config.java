@@ -13,6 +13,7 @@ public final class Config {
     public final String token, agentToken, users, mac, broadcast, pcIp, displayName;
     public final int port, pcCheckPort, agentPort;
     public final boolean autoStart;
+    Context runtimeContext;
     public Config(String t,String u,String m,String b,int p,boolean a) { this(t,"",u,m,b,p,"",445,8765,a,""); }
     public Config(String t,String u,String m,String b,int p,String host,int probePort,boolean a) { this(t,"",u,m,b,p,host,probePort,8765,a,""); }
     public Config(String t,String agent,String u,String m,String b,int p,String host,int probePort,int agentHttpPort,boolean a) { this(t,agent,u,m,b,p,host,probePort,agentHttpPort,a,""); }
@@ -38,7 +39,8 @@ public final class Config {
         } catch(Exception ignored) { /* Fail closed; request reimport if the key is unavailable. */ }
         String agent="";
         try { if(p.contains("agentCipher")){Cipher agentDec=Cipher.getInstance("AES/GCM/NoPadding");agentDec.init(Cipher.DECRYPT_MODE,key(),new GCMParameterSpec(128,Base64.decode(p.getString("agentIv",""),Base64.NO_WRAP)));agent=new String(agentDec.doFinal(Base64.decode(p.getString("agentCipher",""),Base64.NO_WRAP)),"UTF-8");} } catch(Exception ignored) { }
-        return new Config(token,agent,p.getString("users",""),p.getString("mac",""),p.getString("broadcast","255.255.255.255"),p.getInt("port",9),p.getString("pcIp",""),p.getInt("pcCheckPort",445),p.getInt("agentPort",8765),p.getBoolean("autoStart",true),p.getString("displayName",""));
+        Config loaded=new Config(token,agent,p.getString("users",""),p.getString("mac",""),p.getString("broadcast","255.255.255.255"),p.getInt("port",9),p.getString("pcIp",""),p.getInt("pcCheckPort",445),p.getInt("agentPort",8765),p.getBoolean("autoStart",true),p.getString("displayName",""));
+        loaded.runtimeContext=c.getApplicationContext();return loaded;
     }
     public Config validated() {
         if(token!=null&&!token.isEmpty())Core.token(token);

@@ -14,26 +14,52 @@ import java.nio.charset.StandardCharsets;
 /** Read-only client for the paired Windows companion over LAN or a private Tailscale tunnel. */
 public final class AgentApi {
     private AgentApi() {}
-    private static HttpURLConnection connection(Config cfg,URL url,boolean tailnet) throws Exception {
-        if(!tailnet)return (HttpURLConnection)url.openConnection();
-        Context context=cfg.runtimeContext;
-        if(context==null)throw new IOException("Abra o aplicativo para ativar a conexão remota.");
+    private static Network tailnetNetwork(Config cfg) {
+        Context context=cfg.runtimeContext;if(context==null)return null;
         ConnectivityManager manager=(ConnectivityManager)context.getSystemService(Context.CONNECTIVITY_SERVICE);
-        if(manager!=null)for(Network network:manager.getAllNetworks()) {
+        if(manager==null)return null;
+        for(Network network:manager.getAllNetworks()) {
             NetworkCapabilities capabilities=manager.getNetworkCapabilities(network);
             LinkProperties properties=manager.getLinkProperties(network);
             if(capabilities==null||!capabilities.hasTransport(NetworkCapabilities.TRANSPORT_VPN)||properties==null)continue;
-            for(LinkAddress address:properties.getLinkAddresses())if(Core.tailnetIpv4(address.getAddress().getHostAddress()))
-                return (HttpURLConnection)network.openConnection(url);
+            for(LinkAddress address:properties.getLinkAddresses())if(Core.tailnetIpv4(address.getAddress().getHostAddress()))return network;
         }
+        return null;
+    }
+    private static Network localNetwork(Config cfg,String ip) {
+        Context context=cfg.runtimeContext;if(context==null)return null;
+        ConnectivityManager manager=(ConnectivityManager)context.getSystemService(Context.CONNECTIVITY_SERVICE);
+        if(manager==null)return null;
+        try {
+            byte[] target=InetAddress.getByName(ip).getAddress();if(target.length!=4)return null;
+            for(Network network:manager.getAllNetworks()) {
+                NetworkCapabilities capabilities=manager.getNetworkCapabilities(network);
+                LinkProperties properties=manager.getLinkProperties(network);
+                if(capabilities==null||properties==null||!(capabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)||capabilities.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET)))continue;
+                for(LinkAddress address:properties.getLinkAddresses()) {
+                    byte[] local=address.getAddress().getAddress();if(local.length!=4)continue;
+                    int bits=address.getPrefixLength();boolean matches=true;
+                    for(int i=0;i<4;i++){int used=Math.max(0,Math.min(8,bits-i*8));int mask=used==0?0:255<<(8-used)&255;if((local[i]&mask)!=(target[i]&mask)){matches=false;break;}}
+                    if(matches)return network;
+                }
+            }
+        }catch(Exception ignored){}
+        return null;
+    }
+    private static HttpURLConnection connection(Config cfg,URL url,boolean tailnet,Network local) throws Exception {
+        if(!tailnet)return (HttpURLConnection)(local==null?url.openConnection():local.openConnection(url));
+        Network network=tailnetNetwork(cfg);if(network!=null)return (HttpURLConnection)network.openConnection(url);
         throw new IOException("Ative o Tailscale neste aparelho e entre na mesma rede privada do PC.");
     }
     private static HttpURLConnection open(Config cfg,String path) throws Exception {
         if(cfg.agentToken==null||cfg.agentToken.length()<40)throw new IOException("Pareie o agente Windows antes de consultar o PC.");
-        InetAddress host=InetAddress.getByName(Core.hostIpv4(cfg.pcIp));
+        Network local=localNetwork(cfg,cfg.pcIp);
+        String target=cfg.pcIp;
+        if(cfg.tailscaleIp!=null&&!cfg.tailscaleIp.isEmpty()&&local==null)target=cfg.tailscaleIp;
+        InetAddress host=InetAddress.getByName(Core.hostIpv4(target));
         boolean tailnet=Core.tailnetIpv4(host.getHostAddress());
         if(!host.isSiteLocalAddress()&&!tailnet)throw new IOException("Use o IP local do PC ou o IP privado do Tailscale.");
-        HttpURLConnection c=connection(cfg,new URL("http://"+host.getHostAddress()+":"+cfg.agentPort+path),tailnet);
+        HttpURLConnection c=connection(cfg,new URL("http://"+host.getHostAddress()+":"+cfg.agentPort+path),tailnet,local);
         c.setRequestMethod("GET");c.setConnectTimeout(5000);c.setReadTimeout(path.startsWith("/api/screen")||path.equals("/api/inventory")?35000:8000);c.setInstanceFollowRedirects(false);c.setUseCaches(false);c.setRequestProperty("Authorization","Bearer "+cfg.agentToken);c.setRequestProperty("Cache-Control","no-store");return c;
     }
     private static byte[] read(HttpURLConnection c,int limit) throws Exception {

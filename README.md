@@ -6,7 +6,7 @@ Projeto pessoal para ligar e monitorar um PC Windows 11 pela TV Box, aplicativo 
 
 Os instaladores serão publicados em [Releases](https://github.com/marlico77/bot-telegram/releases). Este repositório contém o código dos programas; o site de downloads fica em [Site-bot-telegram](https://github.com/marlico77/Site-bot-telegram).
 
-A versão 1.3.5 reduz consultas de estado desnecessárias nas respostas do Telegram e diminui o tamanho e a fila dos quadros da tela ao vivo. O app também aceita o IP privado do Tailscale para visualizar o PC em outra rede. Os pacotes são gerados em dist; a publicação em Releases é separada do commit de código.
+A versão 1.3.6 leva o novo painel ao Android e à TV Box: navegação responsiva, gráficos de leituras reais, busca de processos e programas, filtros de atividade, seleção de monitor, zoom e tela ampliada. O app guarda o IP local e o IP Tailscale em campos separados e escolhe a rota conforme a rede. O agente Windows informa a resolução de cada monitor e o estado da permissão de captura sem supervisão. Os pacotes são gerados em dist; a publicação em Releases é separada do commit de código.
 
 ## Atualizações pelo aplicativo
 
@@ -16,7 +16,7 @@ Depois disso, Android e Windows consultam `https://botmy.netlify.app/api/v1/upda
 
 Quando houver uma versão nova, o app avisa e oferece o download. O arquivo é conferido pelo tamanho e SHA-256 antes de abrir o instalador. O APK também precisa ter o mesmo pacote e assinatura do app instalado. A instalação depende da confirmação do usuário no Android ou do UAC no Windows. No Android 8 ou superior, autorize instalar apps desta fonte e volte para **Instalar download**. Se cancelar a instalação, pode tentar novamente pelo mesmo botão. Os dados de configuração são preservados.
 
-Para publicar: crie um Release com o APK, o instalador MSI e `updates.json`. Aumente o `build` de cada plataforma e mantenha os nomes e hashes do manifesto iguais aos anexos. Na versão 1.3.5, Android usa build 17 e Windows usa build 7. O campo `minimumBuild` define a menor versão permitida, por plataforma; o padrão 0 não obriga ninguém a atualizar. Para uma próxima atualização obrigatória, defina o mínimo como o build exigido, nunca maior que o build publicado. Os clientes com atualizador bloqueiam as funções de monitoramento até atualizar. Clientes anteriores à 1.3.1 não obedecem a esse campo.
+Para publicar: crie um Release com o APK, o instalador MSI e `updates.json`. Aumente o `build` de cada plataforma e mantenha os nomes e hashes do manifesto iguais aos anexos. Na versão 1.3.6, Android usa build 18 e Windows usa build 8. O campo `minimumBuild` define a menor versão permitida, por plataforma; o padrão 0 não obriga ninguém a atualizar. Para uma próxima atualização obrigatória, defina o mínimo como o build exigido, nunca maior que o build publicado. Os clientes com atualizador bloqueiam as funções de monitoramento até atualizar. Clientes anteriores à 1.3.1 não obedecem a esse campo.
 
 Uma falha de internet não cria uma obrigação de atualizar. Uma obrigação já recebida permanece guardada até instalar uma versão compatível ou receber um manifesto válido com outra política. Downloads vêm somente do repositório oficial via HTTPS. O instalador Windows continua sem assinatura Authenticode; a verificação do download não substitui a assinatura do publicador.
 
@@ -31,7 +31,7 @@ O instalador atual não tem assinatura Authenticode de um publicador verificado.
 3. Aprove o pedido de pareamento que aparecerá na tela do Windows. A chave é guardada no Android sem transferir arquivo.
 4. Para consultas pelo Telegram fora de casa, deixe o MarlicoBot conectado somente na TV Box. Envie `/metricas`, `/programas` ou `/print` ao bot, ou toque nas opções do **Menu**. A captura única pede aprovação no Windows, exceto se a pessoa no PC ativou o acesso à tela sem supervisão.
 
-Para ver o painel e a tela ao vivo fora de casa, instale o [Tailscale no Windows](https://tailscale.com/docs/install/windows) e no [celular ou Android TV](https://tailscale.com/docs/install/android), conecte ambos à mesma conta/rede privada e mantenha a VPN ativa. Faça o pareamento inicial pela LAN; depois, informe nas configurações do app o IP Tailscale `100.x.y.z` do PC. Na TV Box que recebe os comandos do Telegram, mantenha o IP LAN ou instale Tailscale nela também. Não encaminhe a porta do agente para a internet.
+Para ver o painel e a tela ao vivo fora de casa, instale o [Tailscale no Windows](https://tailscale.com/docs/install/windows) e no [celular ou Android TV](https://tailscale.com/docs/install/android), conecte ambos à mesma conta/rede privada e mantenha a VPN ativa. Faça o pareamento inicial pela LAN; depois, informe nas configurações do app o IP Tailscale `100.x.y.z` do PC no campo separado. O IP local permanece para acesso em casa. Não encaminhe a porta do agente para a internet.
 
 ## Limites
 

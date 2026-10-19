@@ -12,7 +12,7 @@ $zip = Join-Path $root 'dist\MarlicoBotPC-Windows-x64.zip'
 $msi = Join-Path $root 'dist\MarlicoBotPC-Setup.msi'
 $msiStage = Join-Path $build 'msi'
 $ico = Join-Path $build 'marlicobot.ico'
-$version = '1.3.5'
+$version = '1.3.6'
 # Keep this UUID stable. Windows Installer uses it to replace later MSI releases.
 $upgradeUuid = '2799c98c-b64c-4b12-b44c-02ad5aec1941'
 if (-not (Test-Path (Join-Path $jdk 'bin\jpackage.exe'))) { throw 'JDK 17 com jpackage não encontrado em .tools/jdk.' }

@@ -4,7 +4,7 @@ Aplicativo Android para TV Box e celular. Recebe comandos do Telegram na TV Box,
 
 ## Instalação
 
-1. Copie `dist/MarlicoBot-1.3.5.apk` para o pendrive. Instale por cima da versão anterior sem desinstalá-la, para manter as configurações.
+1. Copie `dist/MarlicoBot-1.3.6.apk` para o pendrive. Instale por cima da versão anterior sem desinstalá-la, para manter as configurações.
 2. Na TV Box, abra o APK com o gerenciador de arquivos e permita a instalação por essa fonte se o Android solicitar.
 3. Se ainda não configurou o bot, importe o `.env` já usado. Para parear com o PC, abra **Monitorar PC → Parear pela rede local** e aprove o pedido na tela do Windows.
 4. Pare o bot antigo no Termux com **Ctrl+C** e encerre qualquer cópia no PC.
@@ -36,12 +36,12 @@ Para ver a tela ao vivo, no painel Android abra **Monitorar PC**, escolha o moni
 
 ### Fora da rede local
 
-1. Pareie o celular e o PC enquanto ambos estiverem na mesma LAN. Cada Android guarda sua própria chave; a instalação da TV Box não pareia o celular automaticamente.
+1. Pareie o celular e o PC enquanto ambos estiverem na mesma LAN. Cada Android armazena localmente a chave fornecida pelo agente; a instalação da TV Box não pareia o celular automaticamente. O agente ainda usa uma chave compartilhada entre os aparelhos pareados.
 2. Instale o [Tailscale no PC Windows](https://tailscale.com/docs/install/windows) e no [celular ou Android TV](https://tailscale.com/docs/install/android). Entre na mesma rede privada nos dois dispositivos e mantenha a VPN conectada.
 3. No agente Windows, clique em **Permitir rede privada** para atualizar a regra do firewall. Reinicie o agente se o Tailscale foi instalado depois de abri-lo; o seletor de IP mostrará o endereço `100.x.y.z` do PC.
-4. No Android, abra **Configurações**, troque **IP do computador** pelo IP Tailscale do PC e salve. Abra **Monitorar PC → Acesso remoto** em outra rede, como dados móveis.
+4. No Android, abra **Configurações**, mantenha o **IP local do PC** e preencha **IP Tailscale do PC** com o endereço 100.x. Salve e abra **Tela remota** em outra rede, como dados móveis. O aplicativo escolhe o endereço local na mesma rede e o Tailscale fora dela.
 
-O app só envia o segredo de pareamento para esse endereço quando detecta uma VPN com IP Tailscale no Android. Sem Tailscale ativo, a conexão remota falha imediatamente. Não abra a porta 8765 no roteador. O Wake-on-LAN continua dependendo de um dispositivo dentro da rede da casa, como a TV Box; a conexão remota exige que o PC já esteja ligado.
+O app só envia a chave de acesso para esse endereço quando detecta uma VPN com IP Tailscale no Android. Sem Tailscale ativo, a conexão remota falha imediatamente. Não abra a porta 8765 no roteador. O Wake-on-LAN continua dependendo de um dispositivo dentro da rede da casa, como a TV Box; a conexão remota exige que o PC já esteja ligado. **Desvincular este Android** remove a chave apenas deste aparelho; para invalidar cópias em outros aparelhos, altere a chave no agente Windows.
 
 Por padrão, cada pedido de foto única do Telegram ou do painel Android exibe uma caixa de confirmação no Windows. Com o acesso sem supervisão ativado localmente, um pedido autenticado envia a imagem sem repetir a caixa; a captura continua sendo única, não uma transmissão contínua. Para comandos remotos via Telegram fora de casa, a TV Box deve estar ligada, pareada e conectada ao PC pela rede local, ou ambos devem estar no mesmo Tailscale com o IP 100.x configurado na TV Box.
 

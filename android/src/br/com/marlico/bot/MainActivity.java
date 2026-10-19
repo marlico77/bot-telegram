@@ -11,6 +11,7 @@ import android.view.*;
 import android.webkit.*;
 import org.json.*;
 import java.io.*;
+import java.net.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -47,8 +48,8 @@ public final class MainActivity extends Activity {
         try {
             if(!"https".equals(uri.getScheme())||!"app.marlico.local".equals(uri.getHost()))throw new IOException();
             String file=uri.getPath().substring(1);
-            if(!file.matches("index\\.html|app\\.css|app\\.js|avatar\\.png"))throw new IOException();
-            String mime=file.endsWith("html")?"text/html":file.endsWith("css")?"text/css":file.endsWith("js")?"application/javascript":"image/png";
+            if(!file.matches("index\\.html|app\\.css|theme\\.css|app\\.js|icons\\.js|geist\\.woff2|avatar\\.png"))throw new IOException();
+            String mime=file.endsWith("html")?"text/html":file.endsWith("css")?"text/css":file.endsWith("js")?"application/javascript":file.endsWith("woff2")?"font/woff2":"image/png";
             return new WebResourceResponse(mime,"UTF-8",getAssets().open(file));
         }catch(Exception e){return new WebResourceResponse("text/plain","UTF-8",new ByteArrayInputStream(new byte[0]));}
     }
@@ -65,18 +66,56 @@ public final class MainActivity extends Activity {
     @Override public void onBackPressed(){web.evaluateJavascript("window.closePanel ? window.closePanel() : false",result->{if(!"true".equals(result))finish();});}
     private void js(String code){runOnUiThread(()->{if(!destroyed)web.evaluateJavascript(code,null);});}
     private void toast(String text){js("window.notify("+JSONObject.quote(text)+")");}
+    private String androidIp() {
+        try {
+            ConnectivityManager cm=(ConnectivityManager)getSystemService(CONNECTIVITY_SERVICE);
+            if(cm==null)return "";
+            String vpn="";
+            for(Network network:cm.getAllNetworks()) {
+                LinkProperties properties=cm.getLinkProperties(network);
+                NetworkCapabilities capabilities=cm.getNetworkCapabilities(network);
+                if(properties==null||capabilities==null)continue;
+                for(LinkAddress address:properties.getLinkAddresses()) {
+                    InetAddress ip=address.getAddress();if(!(ip instanceof Inet4Address)||ip.isLoopbackAddress())continue;
+                    if(!capabilities.hasTransport(NetworkCapabilities.TRANSPORT_VPN)&&ip.isSiteLocalAddress())return ip.getHostAddress();
+                    if(Core.tailnetIpv4(ip.getHostAddress()))vpn=ip.getHostAddress();
+                }
+            }
+            return vpn;
+        }catch(Exception ignored){return "";}
+    }
+    private JSONObject metricHistory(JSONObject current) {
+        SharedPreferences p=Config.prefs(this);JSONArray old;
+        try{old=new JSONArray(p.getString("metricHistory","[]"));}catch(Exception e){old=new JSONArray();}
+        JSONArray kept=new JSONArray();long now=System.currentTimeMillis(),last=0;
+        for(int i=0;i<old.length();i++) {
+            JSONObject sample=old.optJSONObject(i);if(sample==null)continue;
+            long time=sample.optLong("time",0);if(time<now-7200000L||time>now+60000L)continue;
+            kept.put(sample);last=time;
+        }
+        if(now-last>=15000) {
+            double cpu=current.optDouble("cpuPercent",-1),gpu=current.optDouble("gpuPercent",-1);
+            long used=current.optLong("memoryUsedBytes",-1),total=current.optLong("memoryTotalBytes",-1);
+            long diskUsed=current.optLong("diskUsedBytes",-1),diskTotal=current.optLong("diskTotalBytes",-1);
+            JSONObject sample=new JSONObject();
+            try{sample.put("time",now).put("cpu",cpu).put("gpu",gpu).put("memory",total>0?100.0*used/total:-1).put("disk",diskTotal>0?100.0*diskUsed/diskTotal:-1);}catch(JSONException ignored){}
+            kept.put(sample);p.edit().putString("metricHistory",kept.toString()).apply();
+        }
+        try{current.put("history",kept);}catch(JSONException ignored){}
+        return current;
+    }
     private void emitState() {
         if(destroyed)return;
         try {
             Config cfg=Config.load(this);SharedPreferences p=Config.prefs(this);
-            if(cfg.agentToken!=null&&cfg.agentToken.length()>=40&&!pcProbeInFlight&&System.currentTimeMillis()-lastPcProbe>10000){pcProbeInFlight=true;lastPcProbe=System.currentTimeMillis();tasks.submit(()->{boolean online=AgentApi.isOnline(cfg);runOnUiThread(()->{pcProbeInFlight=false;Config.prefs(MainActivity.this).edit().putString("pcState",online?"online":"offline").putLong("pcStateAt",System.currentTimeMillis()).apply();emitState();});});}
+            if(cfg.agentToken!=null&&cfg.agentToken.length()>=40&&!pcProbeInFlight&&System.currentTimeMillis()-lastPcProbe>10000){pcProbeInFlight=true;lastPcProbe=System.currentTimeMillis();tasks.submit(()->{boolean online=AgentApi.isOnline(cfg);runOnUiThread(()->{pcProbeInFlight=false;Config latest=Config.load(MainActivity.this);Config.prefs(MainActivity.this).edit().putString("pcState",latest.agentToken.isEmpty()?"unknown":online?"online":"offline").putLong("pcStateAt",System.currentTimeMillis()).apply();emitState();});});}
             String state=p.getString("state","off");boolean active=BotService.running();
             if(!active&&!state.equals("error"))state="off";
             JSONObject data=cfg.publicJson().put("state",state).put("running",active).put("detail",p.getString("detail","Importe seu .env para começar.")).put("botName",p.getString("botName","")).put("wakeCount",p.getInt("wakeCount",0)).put("lastWake",p.getLong("lastWake",0)).put("events",new JSONArray(p.getString("events","[]")));
             data.put("pcState",p.getString("pcState","unknown")).put("pcStateAt",p.getLong("pcStateAt",0));
             data.put("updateStatus",AppUpdates.status(this)).put("updateRequired",AppUpdates.required(this)).put("updateAvailable",AppUpdates.available()).put("updateBusy",AppUpdates.busy());
             ConnectivityManager cm=(ConnectivityManager)getSystemService(CONNECTIVITY_SERVICE);NetworkInfo info=cm.getActiveNetworkInfo();
-            data.put("network",info!=null&&info.isConnected()?(info.getType()==ConnectivityManager.TYPE_ETHERNET?"Cabo conectado":"Rede conectada"):"Sem rede");
+            data.put("network",info!=null&&info.isConnected()?(info.getType()==ConnectivityManager.TYPE_ETHERNET?"Cabo conectado":"Rede conectada"):"Sem rede").put("androidIp",androidIp());
             PowerManager pm=(PowerManager)getSystemService(POWER_SERVICE);data.put("batteryFree",pm.isIgnoringBatteryOptimizations(getPackageName()));
             js("window.renderState("+data.toString()+")");
         }catch(Exception e){toast("Não foi possível ler as configurações. Importe o .env novamente.");}
@@ -88,6 +127,7 @@ public final class MainActivity extends Activity {
         }catch(Exception e){toast("Não foi possível iniciar. Confira as configurações do bot.");}
     }
     public final class Bridge {
+        @JavascriptInterface public String metricHistory(){return Config.prefs(MainActivity.this).getString("metricHistory","[]");}
         @JavascriptInterface public void checkUpdates(){AppUpdates.check(MainActivity.this,true);}
         @JavascriptInterface public void downloadUpdate(){runOnUiThread(()->AppUpdates.action(MainActivity.this));}
         @JavascriptInterface public void installUpdate(){runOnUiThread(()->AppUpdates.installDownloaded(MainActivity.this));}
@@ -99,12 +139,20 @@ public final class MainActivity extends Activity {
             try{Config old=Config.load(MainActivity.this);String ip=old.pcIp;JSONObject answer=AgentApi.pair(ip,old.agentPort);String agent=answer.optString("token","");int port=answer.optInt("port",old.agentPort);boolean wasRunning=BotService.running();if(wasRunning)BotService.shutdown(MainActivity.this);Config.savePairing(MainActivity.this,agent,ip,port);js("window.pairingSaved()");event("good","TV Box pareada com o agente Windows pela rede local.");toast("✅ Pareamento concluído pela rede local.");emitState();if(wasRunning)handler.postDelayed(()->BotService.start(MainActivity.this),700);}
             catch(Exception e){String message=e.getMessage()==null?"Não foi possível parear. Confira o IP e a rede local.":e.getMessage();toast(message);}
         });}
+        @JavascriptInterface public void unpairAgent(){runOnUiThread(()->new AlertDialog.Builder(MainActivity.this)
+            .setTitle("Desvincular este Android?")
+            .setMessage("A chave de pareamento será removida deste aparelho. O bot e as configurações do Telegram serão mantidos. Para bloquear cópias da chave em outros aparelhos, altere a chave no agente Windows.")
+            .setNegativeButton("Voltar",null).setPositiveButton("Desvincular",(dialog,which)->tasks.submit(()->{
+                try{liveViewRunning.set(false);boolean wasRunning=BotService.running();if(wasRunning)BotService.shutdown(MainActivity.this);Config.clearPairing(MainActivity.this);js("window.pairingRemoved()");runOnUiThread(()->{emitState();if(wasRunning)handler.postDelayed(()->startBot(),700);});toast("Este Android foi desvinculado do agente Windows.");}
+                catch(Exception e){toast("Não foi possível desvincular este aparelho.");}
+            })).show());}
+        @JavascriptInterface public void clearEvents(){runOnUiThread(()->{Config.prefs(MainActivity.this).edit().remove("events").apply();emitState();toast("Histórico local apagado.");});}
         @JavascriptInterface public void save(String json){tasks.submit(()->{
             try {
                 JSONObject o=new JSONObject(json);Config old=Config.load(MainActivity.this);
                 String t=o.optString("token","").trim();if(t.isEmpty())t=old.token;
                 String agent=o.optString("agentToken","").trim();if(agent.isEmpty())agent=old.agentToken;
-                Config next=new Config(t,agent,o.optString("users"),o.optString("mac"),o.optString("broadcast"),Core.port(o.optString("port")),Core.hostIpv4(o.optString("pcIp")),Core.port(o.optString("pcCheckPort")),Core.port(o.optString("agentPort")),o.optBoolean("autoStart",true),o.optString("displayName",old.displayName)).validated();
+                Config next=new Config(t,agent,o.optString("users"),o.optString("mac"),o.optString("broadcast"),Core.port(o.optString("port")),Core.hostIpv4(o.optString("pcIp")),Core.port(o.optString("pcCheckPort")),Core.port(o.optString("agentPort")),o.optBoolean("autoStart",true),o.optString("displayName",old.displayName),o.optString("tailscaleIp",old.tailscaleIp)).validated();
                 applyConfig(next);
             }catch(IllegalArgumentException e){toast(e.getMessage());}catch(Exception e){toast("Não foi possível salvar. Confira os dados e tente novamente.");}
         });}
@@ -115,7 +163,7 @@ public final class MainActivity extends Activity {
             emitState();
         }catch(Exception e){toast("Não foi possível enviar o sinal. Confira as configurações e a conexão com a rede local.");}});}
         @JavascriptInterface public void battery(){runOnUiThread(()->{try{startActivity(new Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS));}catch(ActivityNotFoundException e){try{startActivity(new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,Uri.parse("package:"+getPackageName())));}catch(Exception ignored){toast("Abra as configurações do Android e permita a execução em segundo plano do MarlicoBot.");}}});}
-        @JavascriptInterface public void monitor(){tasks.submit(()->{try{JSONObject value=AgentApi.get(Config.load(MainActivity.this),"/api/status");js("window.pcStatus("+value.toString()+")");}catch(Exception e){js("window.pcFailure("+JSONObject.quote(e.getMessage()==null?"Não foi possível consultar o agente Windows.":e.getMessage())+")");}});}
+        @JavascriptInterface public void monitor(){tasks.submit(()->{try{JSONObject value=MainActivity.this.metricHistory(AgentApi.get(Config.load(MainActivity.this),"/api/status"));Config.prefs(MainActivity.this).edit().putString("pcState","online").putLong("pcStateAt",System.currentTimeMillis()).apply();js("window.pcStatus("+value.toString()+")");}catch(Exception e){js("window.pcMonitorFailure("+JSONObject.quote(e.getMessage()==null?"Não foi possível consultar o agente Windows.":e.getMessage())+")");}});}
         @JavascriptInterface public void processes(){tasks.submit(()->{try{JSONObject value=AgentApi.get(Config.load(MainActivity.this),"/api/processes");js("window.pcProcesses("+value.toString()+")");}catch(Exception e){js("window.pcFailure("+JSONObject.quote(e.getMessage()==null?"Não foi possível consultar os programas.":e.getMessage())+")");}});}
         @JavascriptInterface public void inventory(){tasks.submit(()->{try{JSONObject value=AgentApi.get(Config.load(MainActivity.this),"/api/inventory");js("window.pcInventory("+value.toString()+")");}catch(Exception e){js("window.pcFailure("+JSONObject.quote(e.getMessage()==null?"Não foi possível consultar o inventário.":e.getMessage())+")");}});}
         @JavascriptInterface public void screen(int monitor){tasks.submit(()->{try{byte[] image=AgentApi.screen(Config.load(MainActivity.this),monitor);String encoded=android.util.Base64.encodeToString(image,android.util.Base64.NO_WRAP);js("window.pcScreen("+JSONObject.quote("data:image/jpeg;base64,"+encoded)+")");}catch(Exception e){js("window.pcFailure("+JSONObject.quote(e.getMessage()==null?"Captura recusada ou indisponível.":e.getMessage())+")");}});}

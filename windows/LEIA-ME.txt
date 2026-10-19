@@ -25,7 +25,7 @@ PRIVACIDADE
 - O inventário lista os aplicativos clássicos registrados pelo Windows; números de série não são coletados.
 - Desinstale em Configurações do Windows → Aplicativos instalados → MarlicoBot PC. As preferências de pareamento permanecem em AppData.
 
-VERSÃO 1.3.5
+VERSÃO 1.3.6
 Acesso remoto: quadros menores e sem fila de imagens para reduzir o atraso. Visualização pela LAN ou pelo Tailscale, sem controle de mouse ou teclado. Autorize no PC ou ative localmente o acesso à tela sem supervisão para futuros pedidos do app e fotos únicas pelo Telegram. Use o botão Parar para encerrar uma transmissão.
 Desligamento: solicite no aplicativo ou /desligar no Telegram. Para cancelar, use /cancelar_desligamento ou o botão na aba Privacidade e conexão.
 

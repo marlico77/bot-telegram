@@ -62,7 +62,7 @@
   }
   function sidebar(){
     return `<aside class="sidebar ${model.sidebarCollapsed?'collapsed':''} ${model.mobileOpen?'mobile-open':''}">
-      <div class="brand"><div class="brand-logo">${icon('monitor','lg')}</div><div class="hide-collapsed"><strong>MarlicoBot</strong><span>Control Center · Android</span></div></div>
+      <div class="brand"><div class="brand-logo"><img src="avatar.png" alt="" aria-hidden="true"></div><div class="hide-collapsed"><strong>MarlicoBot</strong><span>Controle do PC</span></div></div>
       <span class="section-label">Workspace</span>${pages.slice(0,5).map(navItem).join('')}
       <span class="section-label">Gerenciamento</span>${pages.slice(5).map(navItem).join('')}
       <div class="sidebar-bottom"><div class="side-state"><span class="dot ${model.state.state==='online'?'':'red'}"></span><div><div class="bold small">Bot Telegram</div><div class="tiny muted">${esc(model.state.botName?'@'+model.state.botName:statusLabel())}</div></div></div>
@@ -72,11 +72,12 @@
     const title=(pages.find(p=>p[0]===model.page)||pages[0])[2];
     return `<header class="topbar"><div class="topbar-left">
       <button class="iconbtn" data-action="toggleSidebar" aria-label="Abrir ou recolher menu">${icon('menu')}</button>
+      <span class="mobile-brand-logo" aria-hidden="true"><img src="avatar.png" alt=""></span>
       <span class="header-divider"></span><div class="crumb"><span class="crumb-root">MarlicoBot</span><span class="crumb-sep">/</span><strong>${title}</strong></div>
       <button class="search-trigger" data-action="search" aria-label="Buscar seção">${icon('search')}<span>Buscar no painel...</span><kbd>Ctrl K</kbd></button>
       </div><div class="top-actions"><span class="pill ${model.state.state==='online'?'':'offline'}"><span class="dot ${model.state.state==='online'?'':'red'}"></span><span class="status-label">${statusLabel()}</span><span class="small">${model.state.state==='online'?'Online':'Offline'}</span></span>
       <button class="iconbtn" data-action="alerts" aria-label="Atividade recente">${icon('bell')}</button><button class="iconbtn" data-nav="settings" aria-label="Configurações">${icon('settings')}</button>
-      <span class="divider-v"></span><div class="user-avatar">M</div></div></header>`;
+      </div></header>`;
   }
   function bottomNav(){
     return `<nav class="mobile-bottom" aria-label="Navegação inferior">

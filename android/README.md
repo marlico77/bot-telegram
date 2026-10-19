@@ -4,7 +4,7 @@ Aplicativo Android para TV Box e celular. Recebe comandos do Telegram na TV Box,
 
 ## Instalação
 
-1. Copie `dist/MarlicoBot-1.3.6.apk` para o pendrive. Instale por cima da versão anterior sem desinstalá-la, para manter as configurações.
+1. Copie `dist/MarlicoBot-1.3.7.apk` para o pendrive. Instale por cima da versão anterior sem desinstalá-la, para manter as configurações.
 2. Na TV Box, abra o APK com o gerenciador de arquivos e permita a instalação por essa fonte se o Android solicitar.
 3. Se ainda não configurou o bot, importe o `.env` já usado. Para parear com o PC, abra **Monitorar PC → Parear pela rede local** e aprove o pedido na tela do Windows.
 4. Pare o bot antigo no Termux com **Ctrl+C** e encerre qualquer cópia no PC.

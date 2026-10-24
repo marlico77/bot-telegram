@@ -288,6 +288,8 @@
     const scroll=window.scrollY;
     el('app').innerHTML=`<div class="shell">${model.mobileOpen?'<div class="mobile-mask" data-action="closeMobile"></div>':''}
       ${sidebar()}<div class="main-wrap">${topbar()}<main class="main-content">${view()}</main></div>${bottomNav()}</div>`;
+    if(model.page==='activity'){const head=el('app').querySelector('.main-content .page-head');if(head)head.insertAdjacentHTML('afterend',processContent());}
+    if(model.page==='settings')el('app').querySelector('.main-content').insertAdjacentHTML('afterbegin','<section class="card pad"><div class="card-heading"><div><h3 class="card-title">Conectar outro celular</h3><div class="card-subtitle">Leia o QR pelo celular para preencher a rede, o pareamento e as credenciais do bot.</div></div><button class="btn primary" data-action="shareQr">Mostrar QR Code</button></div></section>');
     if(scroll)window.scrollTo(0,scroll);
     syncRequired();
   }
@@ -305,7 +307,7 @@
     if(model.live && page!=='remote' && !(model.page==='monitor' && page==='monitor')){invoke('stopLiveScreen');model.live=false;}
     model.page=page;model.mobileOpen=false;model.expanded=false;window.scrollTo(0,0);render();
     if(['overview','monitor','remote'].includes(page)&&model.state.hasAgentToken)invoke('monitor');
-    if(page==='processes'||(page==='monitor'&&model.tab==='programs'))invoke('processes');
+    if(page==='processes'||page==='activity'||(page==='monitor'&&model.tab==='programs'))invoke('processes');
     if(page==='monitor'&&model.tab==='hardware')invoke('inventory');
   }
   function act(name){
@@ -339,6 +341,7 @@
         break;
       }
       case 'pair':invoke('pairAgent');window.notify('Confirme a solicitação no computador.');break;
+      case 'shareQr':invoke('showPairQr');break;
       case 'unpair':invoke('unpairAgent');break;
       case 'clearLogs':model.state.events=[];render();invoke('clearEvents');break;
       case 'battery':invoke('battery');break;
@@ -446,7 +449,7 @@
     if(model.page==='overview'||(model.page==='monitor'&&model.tab==='metrics'))render();
     if((model.page==='remote'||(model.page==='monitor'&&model.tab==='screen')) && !model.live)render();
   };
-  window.pcProcesses=data=>{model.processes=data;if((model.page==='processes'||(model.page==='monitor'&&model.tab==='programs'))&&document.activeElement?.id!=='process-filter')render();};
+  window.pcProcesses=data=>{model.processes=data;if((model.page==='processes'||model.page==='activity'||(model.page==='monitor'&&model.tab==='programs'))&&document.activeElement?.id!=='process-filter')render();};
   window.pcInventory=data=>{model.inventory=data;if(model.page==='monitor'&&model.tab==='hardware'&&document.activeElement?.id!=='installed-filter')render();};
   window.pcFailure=message=>{window.notify(message);};
   window.pcMonitorFailure=message=>{model.metrics=null;if(['overview','monitor','remote'].includes(model.page)&&!model.live)render();window.notify(message);};
@@ -490,7 +493,7 @@
   setInterval(()=>{
     if(!model.state.hasAgentToken)return;
     if(['overview','monitor','remote'].includes(model.page))invoke('monitor');
-    if(model.page==='processes'||(model.page==='monitor'&&model.tab==='programs')){if(++poll%3===0)invoke('processes');}
+    if(model.page==='processes'||model.page==='activity'||(model.page==='monitor'&&model.tab==='programs')){if(++poll%3===0)invoke('processes');}
   },5000);
   if(bridge&&typeof bridge.metricHistory==='function'){
     try{const saved=JSON.parse(bridge.metricHistory()||'[]');if(Array.isArray(saved))model.history=saved;}catch(_ignored){}

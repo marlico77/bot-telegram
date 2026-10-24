@@ -4,7 +4,7 @@ Aplicativo Android para TV Box e celular. Recebe comandos do Telegram na TV Box,
 
 ## Instalação
 
-1. Copie `dist/MarlicoBot-1.3.8.apk` para o pendrive. Instale por cima da versão anterior sem desinstalá-la, para manter as configurações.
+1. Copie `dist/MarlicoBot-1.3.9.apk` para o pendrive. Instale por cima da versão anterior sem desinstalá-la, para manter as configurações.
 2. Na TV Box, abra o APK com o gerenciador de arquivos e permita a instalação por essa fonte se o Android solicitar.
 3. Se ainda não configurou o bot, importe o `.env` já usado. Para parear com o PC, abra **Monitorar PC → Parear pela rede local** e aprove o pedido na tela do Windows.
 4. Pare o bot antigo no Termux com **Ctrl+C** e encerre qualquer cópia no PC.
@@ -31,6 +31,8 @@ O IP privado do PC precisa estar correto nas configurações do app. A chave do 
 Instale `dist/MarlicoBotPC-Setup.msi` no Windows 11. O agente consulta CPU, memória, armazenamento, tempo ligado, processos, título da janela ativa, versão do Windows e inventário de hardware e programas. Não tem comandos para mover o mouse, digitar, executar programas, ler arquivos ou alterar configurações.
 
 No Windows, escolha **Permitir rede privada** e aprove o pedido do UAC para liberar a sub-rede local e os endereços Tailscale na porta TCP 8765. No app, inicie **Parear pela rede local**; aceite no Windows o pedido que você iniciou. O agente precisa continuar aberto.
+
+Para preencher outro celular sem redigitar as credenciais, abra **Configurações → Mostrar QR Code** na TV Box pareada. Com o MarlicoBot instalado no celular, leia o QR pela câmera e confirme a importação no app. O código transfere as configurações do bot, os endereços de rede e a chave de pareamento; expira em cinco minutos. Mostre-o apenas ao seu aparelho em uma rede confiável.
 
 Para ver a tela ao vivo, no painel Android abra **Monitorar PC**, escolha o monitor e toque em **Acesso remoto**. Por padrão, o Windows exibe uma confirmação para aquela sessão. A pessoa no PC pode ativar localmente **Permitir acesso à tela sem supervisão** para dispensar confirmações futuras, tanto da visualização no app quanto da foto única pelo Telegram; pode revogar a opção no agente. Um aviso fica visível no PC durante a transmissão e a pessoa pode pará-la pelo agente ou pelo app. O vídeo é atualizado em quadros, com zoom e seleção de monitor; não há controle de mouse/teclado.
 

@@ -4,10 +4,15 @@ import android.Manifest;
 import android.app.*;
 import android.content.*;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.Paint;
 import android.net.*;
 import android.os.*;
 import android.provider.Settings;
 import android.view.*;
+import android.widget.*;
 import android.webkit.*;
 import org.json.*;
 import java.io.*;
@@ -43,6 +48,7 @@ public final class MainActivity extends Activity {
             @Override public void onPageFinished(WebView v,String url){emitState();}
         });
         web.loadUrl("https://app.marlico.local/index.html");
+        handlePairQrIntent(getIntent());
     }
     private WebResourceResponse asset(Uri uri) {
         try {
@@ -54,7 +60,7 @@ public final class MainActivity extends Activity {
         }catch(Exception e){return new WebResourceResponse("text/plain","UTF-8",new ByteArrayInputStream(new byte[0]));}
     }
     @Override public void onResume(){super.onResume();handler.post(ticker);installRequestedUpdate();}
-    @Override protected void onNewIntent(Intent intent){super.onNewIntent(intent);setIntent(intent);installRequestedUpdate();}
+    @Override protected void onNewIntent(Intent intent){super.onNewIntent(intent);setIntent(intent);installRequestedUpdate();handlePairQrIntent(intent);}
     private void installRequestedUpdate(){
         Intent intent=getIntent();
         if(intent==null||!AppUpdates.INSTALL_ACTION.equals(intent.getAction()))return;
@@ -139,6 +145,7 @@ public final class MainActivity extends Activity {
             try{Config old=Config.load(MainActivity.this);String ip=old.pcIp;JSONObject answer=AgentApi.pair(ip,old.agentPort);String agent=answer.optString("token","");int port=answer.optInt("port",old.agentPort);boolean wasRunning=BotService.running();if(wasRunning)BotService.shutdown(MainActivity.this);Config.savePairing(MainActivity.this,agent,ip,port);js("window.pairingSaved()");event("good","TV Box pareada com o agente Windows pela rede local.");toast("✅ Pareamento concluído pela rede local.");emitState();if(wasRunning)handler.postDelayed(()->BotService.start(MainActivity.this),700);}
             catch(Exception e){String message=e.getMessage()==null?"Não foi possível parear. Confira o IP e a rede local.":e.getMessage();toast(message);}
         });}
+        @JavascriptInterface public void showPairQr(){runOnUiThread(()->showPairQrDialog());}
         @JavascriptInterface public void unpairAgent(){runOnUiThread(()->new AlertDialog.Builder(MainActivity.this)
             .setTitle("Desvincular este Android?")
             .setMessage("A chave de pareamento será removida deste aparelho. O bot e as configurações do Telegram serão mantidos. Para bloquear cópias da chave em outros aparelhos, altere a chave no agente Windows.")
@@ -193,6 +200,39 @@ public final class MainActivity extends Activity {
             }catch(Exception e){toast(e.getMessage());}
         });}
         @JavascriptInterface public void cancelShutdown(){tasks.submit(()->{try{AgentApi.post(Config.load(MainActivity.this),"/api/power","cancel");toast("Desligamento cancelado.");}catch(Exception e){toast(e.getMessage());}});}
+    }
+    private void showPairQrDialog(){
+        Config cfg=Config.load(this);
+        if(cfg.agentToken==null||cfg.agentToken.isEmpty()){new AlertDialog.Builder(this).setTitle("Pareie o PC primeiro").setMessage("O QR inclui a chave segura do agente Windows. Pareie esta TV Box com o PC antes de conectar outro celular.").setPositiveButton("OK",null).show();return;}
+        try{
+            long expires=System.currentTimeMillis()+300000L;
+            JSONObject data=new JSONObject().put("v",1).put("expires",expires).put("token",cfg.token).put("agentToken",cfg.agentToken).put("users",cfg.users).put("mac",cfg.mac).put("broadcast",cfg.broadcast).put("port",cfg.port).put("pcIp",cfg.pcIp).put("tailscaleIp",cfg.tailscaleIp).put("pcCheckPort",cfg.pcCheckPort).put("agentPort",cfg.agentPort).put("autoStart",cfg.autoStart).put("displayName",cfg.displayName);
+            String payload=android.util.Base64.encodeToString(data.toString().getBytes("UTF-8"),android.util.Base64.URL_SAFE|android.util.Base64.NO_WRAP|android.util.Base64.NO_PADDING);
+            Bitmap qr=qrBitmap("marlicobot://connect?payload="+payload,960);
+            LinearLayout content=new LinearLayout(this);content.setOrientation(LinearLayout.VERTICAL);content.setPadding(20,10,20,8);content.setGravity(Gravity.CENTER);
+            ImageView image=new ImageView(this);image.setImageBitmap(qr);image.setScaleType(ImageView.ScaleType.FIT_CENTER);content.addView(image,new LinearLayout.LayoutParams((int)(300*getResources().getDisplayMetrics().density),(int)(300*getResources().getDisplayMetrics().density)));
+            TextView note=new TextView(this);note.setText("Escaneie com a câmera do celular onde o MarlicoBot está instalado. O QR contém credenciais do bot e do PC, vale por 5 minutos e deve ser mostrado apenas a um aparelho seu na rede confiável.");note.setTextSize(14);content.addView(note,new LinearLayout.LayoutParams(-1,-2));
+            new AlertDialog.Builder(this).setTitle("Conectar celular por QR Code").setView(content).setPositiveButton("Fechar",null).show();
+        }catch(Exception e){new AlertDialog.Builder(this).setTitle("Não foi possível criar o QR").setMessage("Confira se a TV Box tem as configurações do bot e o pareamento do Windows.").setPositiveButton("OK",null).show();}
+    }
+    private Bitmap qrBitmap(String value,int pixels){
+        io.nayuki.qrcodegen.QrCode code=io.nayuki.qrcodegen.QrCode.encodeText(value,io.nayuki.qrcodegen.QrCode.Ecc.MEDIUM);
+        int border=4,total=code.size+border*2,scale=Math.max(1,pixels/total),side=total*scale;
+        Bitmap bitmap=Bitmap.createBitmap(side,side,Bitmap.Config.ARGB_8888);Canvas canvas=new Canvas(bitmap);canvas.drawColor(Color.WHITE);Paint paint=new Paint();paint.setColor(Color.BLACK);
+        for(int y=0;y<code.size;y++)for(int x=0;x<code.size;x++)if(code.getModule(x,y))canvas.drawRect((x+border)*scale,(y+border)*scale,(x+border+1)*scale,(y+border+1)*scale,paint);
+        return bitmap;
+    }
+    private void handlePairQrIntent(Intent intent){
+        if(intent==null||!Intent.ACTION_VIEW.equals(intent.getAction()))return;Uri uri=intent.getData();if(uri==null||!"marlicobot".equals(uri.getScheme())||!"connect".equals(uri.getHost()))return;
+        String encoded=uri.getQueryParameter("payload");setIntent(new Intent(this,MainActivity.class).setAction(Intent.ACTION_MAIN));if(encoded==null||encoded.length()>12000){toast("QR de pareamento inválido.");return;}
+        try{
+            byte[] raw=android.util.Base64.decode(encoded,android.util.Base64.URL_SAFE|android.util.Base64.NO_WRAP|android.util.Base64.NO_PADDING);JSONObject o=new JSONObject(new String(raw,"UTF-8"));long now=System.currentTimeMillis(),expiry=o.optLong("expires",0);
+            if(o.optInt("v",0)!=1||expiry<now||expiry>now+600000L)throw new IllegalArgumentException("Este QR expirou. Gere outro na TV Box.");
+            handler.postDelayed(()->new AlertDialog.Builder(MainActivity.this).setTitle("Importar configurações da TV Box?").setMessage("O app vai preencher o token do Telegram, os usuários autorizados, a rede e a chave de pareamento do PC neste celular. Faça isso somente se você iniciou o compartilhamento na sua TV Box.").setNegativeButton("Cancelar",null).setPositiveButton("Importar",(d,w)->tasks.submit(()->{
+                try{Config old=Config.load(MainActivity.this);Config next=new Config(o.optString("token"),o.optString("agentToken"),o.optString("users"),o.optString("mac"),o.optString("broadcast"),Core.port(o.optString("port")),Core.hostIpv4(o.optString("pcIp")),Core.port(o.optString("pcCheckPort")),Core.port(o.optString("agentPort")),o.optBoolean("autoStart",true),o.optString("displayName",old.displayName),o.optString("tailscaleIp")).validated();applyConfig(next);}
+                catch(Exception e){toast(e.getMessage()==null?"Configurações do QR inválidas.":e.getMessage());}
+            })).show(),500);
+        }catch(Exception e){toast(e.getMessage()==null?"Não foi possível ler as configurações do QR.":e.getMessage());}
     }
     private void applyConfig(Config cfg) throws Exception {
         BotService.shutdown(this);cfg.save(this);

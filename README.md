@@ -10,6 +10,8 @@ A versão 1.3.6 leva o novo painel ao Android e à TV Box: navegação responsiv
 
 No Android 1.3.9, Configurações mostra um QR temporário para preencher no celular as credenciais do bot, a rede e o pareamento do PC. A câmera do celular abre o MarlicoBot para importar os dados, que expiram após cinco minutos. A tela Atividade também mostra os processos abertos do Windows. O Android é build 21; o agente Windows 1.3.7 é build 9 e tenta obter uso da GPU pelos contadores AMD/Windows quando a classe CIM formatada não está disponível.
 
+O Android 1.4.0 (build 22) inclui uma ponte remota privada pela TV Box. Celular e TV Box entram na mesma rede Tailscale; a Box encaminha somente as rotas permitidas ao PC pela LAN. O listener usa apenas o IP Tailscale da Box na porta 8766 e não requer encaminhamento de portas no roteador. O PC não precisa participar do Tailscale para essa rota.
+
 ## Atualizações pelo aplicativo
 
 Instale a versão 1.3.1 manualmente uma vez. As versões anteriores não têm o atualizador.

@@ -10,7 +10,7 @@ import java.util.*;
 import org.json.*;
 
 public final class Config {
-    public final String token, agentToken, users, mac, broadcast, pcIp, tailscaleIp, displayName;
+    public final String token, agentToken, users, mac, broadcast, pcIp, tailscaleIp, tailscaleBoxIp, displayName;
     public final int port, pcCheckPort, agentPort;
     public final boolean autoStart;
     Context runtimeContext;
@@ -18,7 +18,8 @@ public final class Config {
     public Config(String t,String u,String m,String b,int p,String host,int probePort,boolean a) { this(t,"",u,m,b,p,host,probePort,8765,a,""); }
     public Config(String t,String agent,String u,String m,String b,int p,String host,int probePort,int agentHttpPort,boolean a) { this(t,agent,u,m,b,p,host,probePort,agentHttpPort,a,""); }
     public Config(String t,String agent,String u,String m,String b,int p,String host,int probePort,int agentHttpPort,boolean a,String name) { this(t,agent,u,m,b,p,host,probePort,agentHttpPort,a,name,""); }
-    public Config(String t,String agent,String u,String m,String b,int p,String host,int probePort,int agentHttpPort,boolean a,String name,String tailnet) { token=t;agentToken=agent;users=u;mac=m;broadcast=b;port=p;pcIp=host;pcCheckPort=probePort;agentPort=agentHttpPort;autoStart=a;displayName=name;tailscaleIp=tailnet; }
+    public Config(String t,String agent,String u,String m,String b,int p,String host,int probePort,int agentHttpPort,boolean a,String name,String tailnet) { this(t,agent,u,m,b,p,host,probePort,agentHttpPort,a,name,tailnet,""); }
+    public Config(String t,String agent,String u,String m,String b,int p,String host,int probePort,int agentHttpPort,boolean a,String name,String tailnet,String box) { token=t;agentToken=agent;users=u;mac=m;broadcast=b;port=p;pcIp=host;pcCheckPort=probePort;agentPort=agentHttpPort;autoStart=a;displayName=name;tailscaleIp=tailnet;tailscaleBoxIp=box; }
     static SharedPreferences prefs(Context c) { return c.getSharedPreferences("marlico",Context.MODE_PRIVATE); }
     private static SecretKey key() throws Exception {
         KeyStore store=KeyStore.getInstance("AndroidKeyStore"); store.load(null);
@@ -40,7 +41,7 @@ public final class Config {
         } catch(Exception ignored) { /* Fail closed; request reimport if the key is unavailable. */ }
         String agent="";
         try { if(p.contains("agentCipher")){Cipher agentDec=Cipher.getInstance("AES/GCM/NoPadding");agentDec.init(Cipher.DECRYPT_MODE,key(),new GCMParameterSpec(128,Base64.decode(p.getString("agentIv",""),Base64.NO_WRAP)));agent=new String(agentDec.doFinal(Base64.decode(p.getString("agentCipher",""),Base64.NO_WRAP)),"UTF-8");} } catch(Exception ignored) { }
-        Config loaded=new Config(token,agent,p.getString("users",""),p.getString("mac",""),p.getString("broadcast","255.255.255.255"),p.getInt("port",9),p.getString("pcIp",""),p.getInt("pcCheckPort",445),p.getInt("agentPort",8765),p.getBoolean("autoStart",true),p.getString("displayName",""),p.getString("tailscaleIp",""));
+        Config loaded=new Config(token,agent,p.getString("users",""),p.getString("mac",""),p.getString("broadcast","255.255.255.255"),p.getInt("port",9),p.getString("pcIp",""),p.getInt("pcCheckPort",445),p.getInt("agentPort",8765),p.getBoolean("autoStart",true),p.getString("displayName",""),p.getString("tailscaleIp",""),p.getString("tailscaleBoxIp",""));
         loaded.runtimeContext=c.getApplicationContext();return loaded;
     }
     public Config validated() {
@@ -52,7 +53,8 @@ public final class Config {
         if(name.length()>40||name.matches("(?s).*[\\p{Cntrl}<>].*"))throw new IllegalArgumentException("Use um nome de até 40 caracteres, sem símbolos de controle.");
         String tailnet=tailscaleIp==null?"":tailscaleIp.trim();
         if(!tailnet.isEmpty()&&!Core.tailnetIpv4(tailnet))throw new IllegalArgumentException("Use um IP 100.x válido do Tailscale ou deixe o campo vazio.");
-        return new Config(token,agentToken==null?"":agentToken,users.trim(),Core.mac(mac),Core.ipv4(broadcast),Core.port(""+port),Core.hostIpv4(pcIp),Core.port(""+pcCheckPort),Core.port(""+agentPort),autoStart,name,tailnet);
+        String box=tailscaleBoxIp==null?"":tailscaleBoxIp.trim();if(!box.isEmpty()&&!Core.tailnetIpv4(box))throw new IllegalArgumentException("Use um IP 100.x do Tailscale da TV Box ou deixe vazio.");
+        return new Config(token,agentToken==null?"":agentToken,users.trim(),Core.mac(mac),Core.ipv4(broadcast),Core.port(""+port),Core.hostIpv4(pcIp),Core.port(""+pcCheckPort),Core.port(""+agentPort),autoStart,name,tailnet,box);
     }
     public boolean ready() { try{validated();return token!=null&&!token.isEmpty();}catch(Exception e){return false;} }
     public void save(Context c) throws Exception {
@@ -62,7 +64,7 @@ public final class Config {
         edit.putString("tokenIv",Base64.encodeToString(cipher.getIV(),Base64.NO_WRAP));
         Cipher agentCipher=Cipher.getInstance("AES/GCM/NoPadding");agentCipher.init(Cipher.ENCRYPT_MODE,key());
         edit.putString("agentCipher",Base64.encodeToString(agentCipher.doFinal(valid.agentToken.getBytes("UTF-8")),Base64.NO_WRAP)).putString("agentIv",Base64.encodeToString(agentCipher.getIV(),Base64.NO_WRAP));
-        edit.putString("users",valid.users).putString("mac",valid.mac).putString("broadcast",valid.broadcast).putInt("port",valid.port).putString("pcIp",valid.pcIp).putString("tailscaleIp",valid.tailscaleIp).putInt("pcCheckPort",valid.pcCheckPort).putInt("agentPort",valid.agentPort).putBoolean("autoStart",valid.autoStart).putString("displayName",valid.displayName);
+        edit.putString("users",valid.users).putString("mac",valid.mac).putString("broadcast",valid.broadcast).putInt("port",valid.port).putString("pcIp",valid.pcIp).putString("tailscaleIp",valid.tailscaleIp).putString("tailscaleBoxIp",valid.tailscaleBoxIp).putInt("pcCheckPort",valid.pcCheckPort).putInt("agentPort",valid.agentPort).putBoolean("autoStart",valid.autoStart).putString("displayName",valid.displayName);
         edit.putBoolean("enabled",false).remove("botName");
         if(!edit.commit()) throw new java.io.IOException("Não foi possível salvar as configurações.");
     }
@@ -77,13 +79,13 @@ public final class Config {
             throw new java.io.IOException("Não foi possível desvincular este Android.");
     }
     public JSONObject publicJson() throws JSONException {
-        return new JSONObject().put("configured",ready()).put("users",users).put("mac",mac).put("broadcast",broadcast).put("port",port).put("pcIp",pcIp).put("tailscaleIp",tailscaleIp).put("pcCheckPort",pcCheckPort).put("agentPort",agentPort).put("autoStart",autoStart).put("displayName",displayName).put("hasToken",!token.isEmpty()).put("hasAgentToken",!agentToken.isEmpty());
+        return new JSONObject().put("configured",ready()).put("users",users).put("mac",mac).put("broadcast",broadcast).put("port",port).put("pcIp",pcIp).put("tailscaleIp",tailscaleIp).put("tailscaleBoxIp",tailscaleBoxIp).put("pcCheckPort",pcCheckPort).put("agentPort",agentPort).put("autoStart",autoStart).put("displayName",displayName).put("hasToken",!token.isEmpty()).put("hasAgentToken",!agentToken.isEmpty());
     }
     public static Config fromEnv(String text, Config old) {
         Map<String,String> e=Core.env(text);
         if(!e.containsKey("TELEGRAM_BOT_TOKEN")&&!e.containsKey("PC_AGENT_TOKEN")) throw new IllegalArgumentException("Arquivo sem configuração do bot ou pareamento do agente Windows.");
         String newToken=value(e,"TELEGRAM_BOT_TOKEN",old.token);
-        return new Config(newToken,value(e,"PC_AGENT_TOKEN",old.agentToken),value(e,"TELEGRAM_ALLOWED_USER_IDS",old.users),value(e,"PC_MAC_ADDRESS",old.mac),value(e,"WOL_BROADCAST_IP",old.broadcast),Core.port(value(e,"WOL_PORT",""+old.port)),Core.hostIpv4(value(e,"PC_IP_ADDRESS",old.pcIp)),Core.port(value(e,"PC_CHECK_PORT",""+old.pcCheckPort)),Core.port(value(e,"PC_AGENT_PORT",""+old.agentPort)),old.autoStart,value(e,"BOT_DISPLAY_NAME",old.displayName),value(e,"PC_TAILSCALE_IP",old.tailscaleIp)).validated();
+        return new Config(newToken,value(e,"PC_AGENT_TOKEN",old.agentToken),value(e,"TELEGRAM_ALLOWED_USER_IDS",old.users),value(e,"PC_MAC_ADDRESS",old.mac),value(e,"WOL_BROADCAST_IP",old.broadcast),Core.port(value(e,"WOL_PORT",""+old.port)),Core.hostIpv4(value(e,"PC_IP_ADDRESS",old.pcIp)),Core.port(value(e,"PC_CHECK_PORT",""+old.pcCheckPort)),Core.port(value(e,"PC_AGENT_PORT",""+old.agentPort)),old.autoStart,value(e,"BOT_DISPLAY_NAME",old.displayName),value(e,"PC_TAILSCALE_IP",old.tailscaleIp),old.tailscaleBoxIp).validated();
     }
     // Map.getOrDefault was only added to Android in API 24.
     private static String value(Map<String,String> map,String key,String fallback) { return map.containsKey(key)?map.get(key):fallback; }

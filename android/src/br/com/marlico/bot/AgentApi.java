@@ -54,14 +54,34 @@ public final class AgentApi {
     private static HttpURLConnection open(Config cfg,String path) throws Exception {
         if(cfg.agentToken==null||cfg.agentToken.length()<40)throw new IOException("Pareie o agente Windows antes de consultar o PC.");
         Network local=localNetwork(cfg,cfg.pcIp);
-        String target=cfg.pcIp;
-        if(cfg.tailscaleIp!=null&&!cfg.tailscaleIp.isEmpty()&&local==null)target=cfg.tailscaleIp;
+        String target=cfg.pcIp;int targetPort=cfg.agentPort;boolean bridge=false;
+        if(local==null&&cfg.tailscaleBoxIp!=null&&!cfg.tailscaleBoxIp.isEmpty()&&!isBridgeHost(cfg)){target=cfg.tailscaleBoxIp;targetPort=8766;}
+        else if(cfg.tailscaleIp!=null&&!cfg.tailscaleIp.isEmpty()&&local==null)target=cfg.tailscaleIp;
         InetAddress host=InetAddress.getByName(Core.hostIpv4(target));
         boolean tailnet=Core.tailnetIpv4(host.getHostAddress());
         if(!host.isSiteLocalAddress()&&!tailnet)throw new IOException("Use o IP local do PC ou o IP privado do Tailscale.");
-        HttpURLConnection c=connection(cfg,new URL("http://"+host.getHostAddress()+":"+cfg.agentPort+path),tailnet,local);
+        HttpURLConnection c=connection(cfg,new URL("http://"+host.getHostAddress()+":"+targetPort+path),tailnet,local);
         c.setRequestMethod("GET");c.setConnectTimeout(5000);c.setReadTimeout(path.startsWith("/api/screen")||path.equals("/api/inventory")?35000:8000);c.setInstanceFollowRedirects(false);c.setUseCaches(false);c.setRequestProperty("Authorization","Bearer "+cfg.agentToken);c.setRequestProperty("Cache-Control","no-store");return c;
     }
+    private static boolean isBridgeHost(Config cfg){return cfg.runtimeContext!=null&&cfg.tailscaleBoxIp.equals(TailscaleBridgeServer.findAddress(cfg.runtimeContext));}
+    public static boolean usesBridge(Config cfg){return cfg.tailscaleBoxIp!=null&&!cfg.tailscaleBoxIp.isEmpty()&&!isBridgeHost(cfg)&&localNetwork(cfg,cfg.pcIp)==null;}
+    static JSONObject wakeThroughBridge(Config cfg)throws Exception {
+        if(cfg.agentToken==null||cfg.agentToken.length()<40)throw new IOException("Pareie primeiro o PC com a TV Box.");
+        InetAddress host=InetAddress.getByName(Core.hostIpv4(cfg.tailscaleBoxIp));Network network=tailnetNetwork(cfg);if(network==null)throw new IOException("Ative o Tailscale neste celular e conecte-o à mesma rede privada da TV Box.");
+        HttpURLConnection c=(HttpURLConnection)network.openConnection(new URL("http://"+host.getHostAddress()+":8766/bridge/wake"));try{c.setRequestMethod("POST");c.setConnectTimeout(5000);c.setReadTimeout(10000);c.setDoOutput(true);c.setRequestProperty("Authorization","Bearer "+cfg.agentToken);c.setFixedLengthStreamingMode(0);return new JSONObject(new String(read(c,8192),StandardCharsets.UTF_8));}finally{c.disconnect();}
+    }
+    static final class BridgeResponse { final int status;final String type,consent;final byte[] body;BridgeResponse(int s,String t,String c,byte[] b){status=s;type=t;consent=c;body=b;} }
+    static BridgeResponse bridgeRequest(Config cfg,String method,String path,String body,String session)throws Exception {
+        if("GET".equals(method)&&("/api/status".equals(path)||"/api/processes".equals(path)||"/api/inventory".equals(path)||path.matches("/api/screen\\?monitor=[0-9]{1,2}")||path.matches("/api/screen/live\\?monitor=[0-9]{1,2}"))) {
+            if(path.startsWith("/api/screen?"))return new BridgeResponse(200,"image/jpeg","one-shot",screen(cfg,queryMonitor(path)));
+            if(path.startsWith("/api/screen/live?")){byte[] frame=liveFrame(cfg,queryMonitor(path),session);return new BridgeResponse(200,"image/jpeg","continuous",frame);}
+            JSONObject result=get(cfg,path);return new BridgeResponse(200,"application/json; charset=utf-8",null,result.toString().getBytes(StandardCharsets.UTF_8));
+        }
+        if("POST".equals(method)&&"/api/power".equals(path)){JSONObject result=post(cfg,path,body);return new BridgeResponse(200,"application/json; charset=utf-8",null,result.toString().getBytes(StandardCharsets.UTF_8));}
+        if("POST".equals(method)&&path.matches("/api/screen/live\\?monitor=[0-9]{1,2}")&&("start".equals(body)||"stop".equals(body))){JSONObject result=livePost(cfg,queryMonitor(path),body,session);return new BridgeResponse(200,"application/json; charset=utf-8",null,result.toString().getBytes(StandardCharsets.UTF_8));}
+        throw new IOException("Operação não permitida pela ponte remota.");
+    }
+    private static int queryMonitor(String path){try{return Integer.parseInt(path.substring(path.indexOf('=')+1));}catch(Exception e){return 0;}}
     private static byte[] read(HttpURLConnection c,int limit) throws Exception {
         int status=c.getResponseCode();InputStream in=status>=400?c.getErrorStream():c.getInputStream();if(in==null)throw new IOException("O agente Windows não respondeu.");
         try(InputStream stream=in;ByteArrayOutputStream out=new ByteArrayOutputStream()){byte[] buf=new byte[8192];int n;while((n=stream.read(buf))!=-1){if(out.size()+n>limit)throw new IOException("Resposta do agente excedeu o limite.");out.write(buf,0,n);}if(status>=400)throw new AgentException(status,"Agente Windows: "+out.toString("UTF-8"));return out.toByteArray();}

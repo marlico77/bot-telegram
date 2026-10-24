@@ -39,11 +39,11 @@ Para ver a tela ao vivo, no painel Android abra **Monitorar PC**, escolha o moni
 ### Fora da rede local
 
 1. Pareie o celular e o PC enquanto ambos estiverem na mesma LAN. Cada Android armazena localmente a chave fornecida pelo agente; a instalação da TV Box não pareia o celular automaticamente. O agente ainda usa uma chave compartilhada entre os aparelhos pareados.
-2. Instale o [Tailscale no PC Windows](https://tailscale.com/docs/install/windows) e no [celular ou Android TV](https://tailscale.com/docs/install/android). Entre na mesma rede privada nos dois dispositivos e mantenha a VPN conectada.
-3. No agente Windows, clique em **Permitir rede privada** para atualizar a regra do firewall. Reinicie o agente se o Tailscale foi instalado depois de abri-lo; o seletor de IP mostrará o endereço `100.x.y.z` do PC.
-4. No Android, abra **Configurações**, mantenha o **IP local do PC** e preencha **IP Tailscale do PC** com o endereço 100.x. Salve e abra **Tela remota** em outra rede, como dados móveis. O aplicativo escolhe o endereço local na mesma rede e o Tailscale fora dela.
+2. Instale o [Tailscale no Android](https://tailscale.com/docs/install/android) na TV Box e no celular. Entre os dois na mesma rede privada e mantenha a VPN conectada. O PC nao precisa de Tailscale para esta rota de ponte.
+3. Na TV Box, mantenha o bot conectado. A ponte usa o IP Tailscale da Box na porta 8766, com a chave de pareamento e lista limitada de rotas.
+4. O QR de Configuracoes tenta preencher IP Tailscale da TV Box. Se estiver vazio, informe o IP 100.x da Box. Em outra rede, o celular encaminha pedidos pela VPN ate a Box e ela acessa o PC pela LAN.
 
-O app só envia a chave de acesso para esse endereço quando detecta uma VPN com IP Tailscale no Android. Sem Tailscale ativo, a conexão remota falha imediatamente. Não abra a porta 8765 no roteador. O Wake-on-LAN continua dependendo de um dispositivo dentro da rede da casa, como a TV Box; a conexão remota exige que o PC já esteja ligado. **Desvincular este Android** remove a chave apenas deste aparelho; para invalidar cópias em outros aparelhos, altere a chave no agente Windows.
+A chave segue somente pela VPN Tailscale. A ponte da Box escuta apenas no IP Tailscale, exige a chave pareada e permite rotas explicitas de telemetria, processos, tela e energia. Nao e proxy generico. Nao encaminhe portas no roteador nem exponha a porta 8765 do agente. Wake-on-LAN e encaminhado pela Box. A TV Box e o servico do bot precisam permanecer ligados.
 
 Por padrão, cada pedido de foto única do Telegram ou do painel Android exibe uma caixa de confirmação no Windows. Com o acesso sem supervisão ativado localmente, um pedido autenticado envia a imagem sem repetir a caixa; a captura continua sendo única, não uma transmissão contínua. Para comandos remotos via Telegram fora de casa, a TV Box deve estar ligada, pareada e conectada ao PC pela rede local, ou ambos devem estar no mesmo Tailscale com o IP 100.x configurado na TV Box.
 

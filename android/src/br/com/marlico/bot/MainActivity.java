@@ -159,7 +159,7 @@ public final class MainActivity extends Activity {
                 JSONObject o=new JSONObject(json);Config old=Config.load(MainActivity.this);
                 String t=o.optString("token","").trim();if(t.isEmpty())t=old.token;
                 String agent=o.optString("agentToken","").trim();if(agent.isEmpty())agent=old.agentToken;
-                Config next=new Config(t,agent,o.optString("users"),o.optString("mac"),o.optString("broadcast"),Core.port(o.optString("port")),Core.hostIpv4(o.optString("pcIp")),Core.port(o.optString("pcCheckPort")),Core.port(o.optString("agentPort")),o.optBoolean("autoStart",true),o.optString("displayName",old.displayName),o.optString("tailscaleIp",old.tailscaleIp)).validated();
+                Config next=new Config(t,agent,o.optString("users"),o.optString("mac"),o.optString("broadcast"),Core.port(o.optString("port")),Core.hostIpv4(o.optString("pcIp")),Core.port(o.optString("pcCheckPort")),Core.port(o.optString("agentPort")),o.optBoolean("autoStart",true),o.optString("displayName",old.displayName),o.optString("tailscaleIp",old.tailscaleIp),o.optString("tailscaleBoxIp",old.tailscaleBoxIp)).validated();
                 applyConfig(next);
             }catch(IllegalArgumentException e){toast(e.getMessage());}catch(Exception e){toast("Não foi possível salvar. Confira os dados e tente novamente.");}
         });}
@@ -206,7 +206,8 @@ public final class MainActivity extends Activity {
         if(cfg.agentToken==null||cfg.agentToken.isEmpty()){new AlertDialog.Builder(this).setTitle("Pareie o PC primeiro").setMessage("O QR inclui a chave segura do agente Windows. Pareie esta TV Box com o PC antes de conectar outro celular.").setPositiveButton("OK",null).show();return;}
         try{
             long expires=System.currentTimeMillis()+300000L;
-            JSONObject data=new JSONObject().put("v",1).put("expires",expires).put("token",cfg.token).put("agentToken",cfg.agentToken).put("users",cfg.users).put("mac",cfg.mac).put("broadcast",cfg.broadcast).put("port",cfg.port).put("pcIp",cfg.pcIp).put("tailscaleIp",cfg.tailscaleIp).put("pcCheckPort",cfg.pcCheckPort).put("agentPort",cfg.agentPort).put("autoStart",cfg.autoStart).put("displayName",cfg.displayName);
+            String boxIp=TailscaleBridgeServer.findAddress(this);if(boxIp.isEmpty())boxIp=cfg.tailscaleBoxIp;
+            JSONObject data=new JSONObject().put("v",1).put("expires",expires).put("token",cfg.token).put("agentToken",cfg.agentToken).put("users",cfg.users).put("mac",cfg.mac).put("broadcast",cfg.broadcast).put("port",cfg.port).put("pcIp",cfg.pcIp).put("tailscaleIp",cfg.tailscaleIp).put("tailscaleBoxIp",boxIp).put("pcCheckPort",cfg.pcCheckPort).put("agentPort",cfg.agentPort).put("autoStart",cfg.autoStart).put("displayName",cfg.displayName);
             String payload=android.util.Base64.encodeToString(data.toString().getBytes("UTF-8"),android.util.Base64.URL_SAFE|android.util.Base64.NO_WRAP|android.util.Base64.NO_PADDING);
             Bitmap qr=qrBitmap("marlicobot://connect?payload="+payload,960);
             LinearLayout content=new LinearLayout(this);content.setOrientation(LinearLayout.VERTICAL);content.setPadding(20,10,20,8);content.setGravity(Gravity.CENTER);
@@ -229,7 +230,7 @@ public final class MainActivity extends Activity {
             byte[] raw=android.util.Base64.decode(encoded,android.util.Base64.URL_SAFE|android.util.Base64.NO_WRAP|android.util.Base64.NO_PADDING);JSONObject o=new JSONObject(new String(raw,"UTF-8"));long now=System.currentTimeMillis(),expiry=o.optLong("expires",0);
             if(o.optInt("v",0)!=1||expiry<now||expiry>now+600000L)throw new IllegalArgumentException("Este QR expirou. Gere outro na TV Box.");
             handler.postDelayed(()->new AlertDialog.Builder(MainActivity.this).setTitle("Importar configurações da TV Box?").setMessage("O app vai preencher o token do Telegram, os usuários autorizados, a rede e a chave de pareamento do PC neste celular. Faça isso somente se você iniciou o compartilhamento na sua TV Box.").setNegativeButton("Cancelar",null).setPositiveButton("Importar",(d,w)->tasks.submit(()->{
-                try{Config old=Config.load(MainActivity.this);Config next=new Config(o.optString("token"),o.optString("agentToken"),o.optString("users"),o.optString("mac"),o.optString("broadcast"),Core.port(o.optString("port")),Core.hostIpv4(o.optString("pcIp")),Core.port(o.optString("pcCheckPort")),Core.port(o.optString("agentPort")),o.optBoolean("autoStart",true),o.optString("displayName",old.displayName),o.optString("tailscaleIp")).validated();applyConfig(next);}
+                try{Config old=Config.load(MainActivity.this);Config next=new Config(o.optString("token"),o.optString("agentToken"),o.optString("users"),o.optString("mac"),o.optString("broadcast"),Core.port(o.optString("port")),Core.hostIpv4(o.optString("pcIp")),Core.port(o.optString("pcCheckPort")),Core.port(o.optString("agentPort")),o.optBoolean("autoStart",true),o.optString("displayName",old.displayName),o.optString("tailscaleIp"),o.optString("tailscaleBoxIp")).validated();applyConfig(next);}
                 catch(Exception e){toast(e.getMessage()==null?"Configurações do QR inválidas.":e.getMessage());}
             })).show(),500);
         }catch(Exception e){toast(e.getMessage()==null?"Não foi possível ler as configurações do QR.":e.getMessage());}
@@ -247,7 +248,7 @@ public final class MainActivity extends Activity {
                 // Prefer the authenticated agent endpoint. The old check only probed
                 // PC_CHECK_PORT (usually SMB/445), which may be filtered even when
                 // Windows and the MarlicoBot agent are already online.
-                if(AgentApi.isOnline(cfg)||Core.hostResponds(cfg.pcIp,cfg.pcCheckPort)){
+                if(AgentApi.isOnline(cfg)||(!AgentApi.usesBridge(cfg)&&Core.hostResponds(cfg.pcIp,cfg.pcCheckPort))){
                     Config.prefs(this).edit().putString("pcState","online").putLong("pcStateAt",System.currentTimeMillis()).apply();
                     event("good","Agente Windows respondeu após o sinal Wake-on-LAN: PC ligado.");toast("✅ Seu PC ligou e o agente Windows está respondendo.");emitState();return;
                 }

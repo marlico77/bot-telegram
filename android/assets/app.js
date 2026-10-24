@@ -266,7 +266,7 @@
       ${field('users','IDs numéricos autorizados')}${field('displayName','Nome para saudação (opcional)')}
       <div class="callout">${icon('shield')} O token salvo não é exibido na tela.</div></section>
       <section class="card settings-group"><div class="card-heading"><div><h3 class="card-title">${icon('monitor')} PC e rede</h3><div class="card-subtitle">Wake-on-LAN e comunicação com o agente</div></div></div>
-      <div class="settings-grid form-columns">${field('mac','Endereço MAC')}${field('pcIp','IP local do PC','Necessário para o pareamento inicial.')}${field('tailscaleIp','IP Tailscale do PC (opcional)','Endereço 100.x para acesso fora de casa. O app escolhe a rede automaticamente.')}${field('broadcast','Endereço broadcast')}
+      <div class="settings-grid form-columns">${field('mac','Endereço MAC')}${field('pcIp','IP local do PC','Necessário para o pareamento inicial.')}${field('tailscaleBoxIp','IP Tailscale da TV Box','Usado como ponte privada para acessar o PC pela rede local. O QR tenta preencher automaticamente.')}${field('tailscaleIp','IP Tailscale do PC (opcional)','Use apenas se quiser acesso direto ao PC pelo Tailscale.')}${field('broadcast','Endereço broadcast')}
       ${field('port','Porta Wake-on-LAN','','number')}${field('pcCheckPort','Porta de verificação','','number')}${field('agentPort','Porta do agente Windows','','number')}</div></section>
       <section class="card settings-group"><h3 class="card-title">${icon('settings')} Aplicativo Android</h3>
       <label class="switch-row"><span><strong>Iniciar com a TV Box</strong><small>Retoma o bot após reiniciar, se ele estava conectado.</small></span><input id="cfg-autoStart" type="checkbox" ${s.autoStart!==false?'checked':''}><span class="toggle-ui"></span></label>
@@ -280,7 +280,7 @@
     return `${heading('Como usar','Prepare a TV Box, o PC e seu bot do Telegram.',button('settings','Abrir configurações','settings','ghost'))}
       <section class="three-column help-steps">
       ${[['01','Configure o Android','Informe o token do BotFather, seus IDs numéricos do Telegram e os dados de rede do PC.'],['02','Conecte o bot','Mantenha somente uma instalação Android conectada ao mesmo bot e permita execução em segundo plano.'],['03','Prepare o Windows','Instale o agente, habilite Wake-on-LAN e aprove o pareamento solicitado pelo Android.'],['04','Use o Telegram','Envie uma mensagem ao bot, abra o menu e selecione os comandos disponíveis.']].map(x=>`<div class="card step"><div class="step-count">${x[0]}</div><h3>${x[1]}</h3><p>${x[2]}</p></div>`).join('')}</section>
-      <div class="settings-grid"><section class="card pad"><h3 class="card-title">Rede e acesso remoto</h3><p>Para acessar de outra rede, mantenha o Tailscale ativo no Android e no Windows e configure o IP 100.x em “IP Tailscale do PC”. O IP local continua necessário para o pareamento inicial. A visualização é somente leitura. Autorize captura e acesso sem supervisão no agente Windows.</p></section>
+      <div class="settings-grid"><section class="card pad"><h3 class="card-title">Rede e acesso remoto</h3><p>Conecte o celular e a TV Box à mesma rede privada Tailscale. O QR preenche o IP da TV Box, que encaminha somente as operações permitidas ao PC pela rede local. O agente fica acessível apenas no Tailscale; não encaminhe portas no roteador. A TV Box precisa permanecer ligada e com o bot conectado.</p></section>
       <section class="card pad"><h3 class="card-title">Confirmação de energia</h3><p>O envio do pacote Wake-on-LAN não confirma que o PC ligou. O aplicativo aguarda a resposta do computador antes de informar o estado.</p></section></div>${footer()}`;
   }
   function render(){
@@ -413,7 +413,7 @@
     if(event.target.id!=='settings-form')return;event.preventDefault();
     const form=event.target;
     const data={autoStart:!!el('cfg-autoStart')?.checked};
-    ['token','users','displayName','mac','pcIp','tailscaleIp','broadcast','port','pcCheckPort','agentPort'].forEach(k=>data[k]=(form.elements[k]?.value||'').trim());
+    ['token','users','displayName','mac','pcIp','tailscaleIp','tailscaleBoxIp','broadcast','port','pcCheckPort','agentPort'].forEach(k=>data[k]=(form.elements[k]?.value||'').trim());
     invoke('save',JSON.stringify(data));
   });
   document.addEventListener('keydown',event=>{

@@ -15,6 +15,8 @@ public final class BotService extends Service {
     private static volatile BotService instance;
     private volatile boolean alive;
     private Thread worker;
+    private Thread bridgeWorker;
+    private TailscaleBridgeServer bridge;
     private TelegramApi api;
     private PowerManager.WakeLock wakeLock;
     private static long lastWake=-100000;
@@ -69,6 +71,10 @@ public final class BotService extends Service {
         Config.prefs(c).edit().putString("state",state).putString("detail",detail).apply();
     }
     public static synchronized WakeResult wake(Context c,Config cfg,String source) throws Exception {
+        if(AgentApi.usesBridge(cfg)){JSONObject result=AgentApi.wakeThroughBridge(cfg);return new WakeResult(result.optString("message","Sinal encaminhado pela TV Box."),result.optBoolean("sent",false));}
+        return wakeLocal(c,cfg,source);
+    }
+    static synchronized WakeResult wakeLocal(Context c,Config cfg,String source) throws Exception {
         long now=SystemClock.elapsedRealtime();
         if(now-lastWake<10000)return new WakeResult("O sinal já foi enviado. Aguarde alguns segundos.",false);
         Core.sendWake(cfg.mac,cfg.broadcast,cfg.port);
@@ -102,6 +108,8 @@ public final class BotService extends Service {
         else startForeground(7,notification("Conectando ao Telegram…"));
         if(worker!=null&&worker.isAlive())return START_STICKY;
         alive=true;
+        bridge=new TailscaleBridgeServer();
+        bridgeWorker=new Thread(()->{while(alive){if(bridge.start(this))break;try{Thread.sleep(15000);}catch(InterruptedException e){return;}}},"MarlicoBot-bridge-watch");bridgeWorker.start();
         wakeLock=((PowerManager)getSystemService(POWER_SERVICE)).newWakeLock(PowerManager.PARTIAL_WAKE_LOCK,"MarlicoBot:receiver");wakeLock.setReferenceCounted(false);wakeLock.acquire();
         api=new TelegramApi(cfg.token);
         worker=new Thread(()->loop(cfg),"MarlicoBot-receiver");worker.start();
@@ -383,6 +391,7 @@ public final class BotService extends Service {
     }
     @Override public void onDestroy() {
         alive=false;if(api!=null)api.cancel();if(worker!=null)worker.interrupt();
+        if(bridgeWorker!=null)bridgeWorker.interrupt();if(bridge!=null)bridge.stop();
         if(wakeLock!=null&&wakeLock.isHeld())wakeLock.release();
         if(instance==this)instance=null;
         stopForeground(true);super.onDestroy();

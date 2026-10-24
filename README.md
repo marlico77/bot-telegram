@@ -8,7 +8,7 @@ Os instaladores serão publicados em [Releases](https://github.com/marlico77/bot
 
 A versão 1.3.6 leva o novo painel ao Android e à TV Box: navegação responsiva, gráficos de leituras reais, busca de processos e programas, filtros de atividade, seleção de monitor, zoom e tela ampliada. O app guarda o IP local e o IP Tailscale em campos separados e escolhe a rota conforme a rede. O agente Windows informa a resolução de cada monitor e o estado da permissão de captura sem supervisão. Os pacotes são gerados em dist; a publicação em Releases é separada do commit de código.
 
-No Android 1.3.7, a logo oficial aparece no painel e no banner da TV Box. O avatar genérico do protótipo foi removido. O build do Android passa a 19; o agente Windows continua no build 8.
+No Android 1.3.7, a logo oficial aparece no painel e no banner da TV Box. O avatar genérico do protótipo foi removido. O build do Android passa a 19; o agente Windows continua no build 8. O Android 1.3.8 confirma o retorno do agente Windows após Wake-on-LAN e aguarda até 90 segundos antes de informar que o estado não foi confirmado.
 
 ## Atualizações pelo aplicativo
 

@@ -201,19 +201,22 @@ public final class MainActivity extends Activity {
     }
     private void event(String kind,String text){BotService.event(this,kind,text);}
     private void checkPc(Config cfg){
-        long deadline=SystemClock.elapsedRealtime()+45000;
+        long deadline=SystemClock.elapsedRealtime()+90000;
         do {
             try {
-                if(Core.hostResponds(cfg.pcIp,cfg.pcCheckPort)){
+                // Prefer the authenticated agent endpoint. The old check only probed
+                // PC_CHECK_PORT (usually SMB/445), which may be filtered even when
+                // Windows and the MarlicoBot agent are already online.
+                if(AgentApi.isOnline(cfg)||Core.hostResponds(cfg.pcIp,cfg.pcCheckPort)){
                     Config.prefs(this).edit().putString("pcState","online").putLong("pcStateAt",System.currentTimeMillis()).apply();
-                    event("good","PC respondeu na rede local: ligado.");toast("✅ Seu PC está ligado e respondendo.");emitState();return;
+                    event("good","Agente Windows respondeu após o sinal Wake-on-LAN: PC ligado.");toast("✅ Seu PC ligou e o agente Windows está respondendo.");emitState();return;
                 }
             } catch(Exception ignored){}
             try{Thread.sleep(3500);}catch(InterruptedException e){Thread.currentThread().interrupt();return;}
         }while(SystemClock.elapsedRealtime()<deadline);
         Config.prefs(this).edit().putString("pcState","unconfirmed").putLong("pcStateAt",System.currentTimeMillis()).apply();
-        event("warn","O PC não respondeu à verificação. O sinal foi enviado, mas o estado não foi confirmado.");
-        toast("📨 O sinal foi enviado, mas não consegui confirmar se o PC ligou. Ping ou a porta de verificação podem estar bloqueados.");emitState();
+        event("warn","O sinal Wake-on-LAN foi enviado, mas o agente e a porta de verificação não responderam em 90 segundos.");
+        toast("📨 O sinal foi enviado, mas não consegui confirmar a resposta do PC. Verifique Wake-on-LAN, Tailscale e firewall.");emitState();
     }
     @Override protected void onActivityResult(int req,int result,Intent data) {
         super.onActivityResult(req,result,data);

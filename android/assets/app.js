@@ -219,10 +219,12 @@
     if(!model.processes)return '<div class="card pad muted">Carregando programas abertos…</div>';
     const all=model.processes.processes||[],query=model.processQuery.toLocaleLowerCase('pt-BR').trim();
     const list=all.filter(p=>!query||String(p.name||'').toLocaleLowerCase('pt-BR').includes(query)||String(p.pid).includes(query));
-    return `<section class="card pad"><div class="card-heading"><div><h3 class="card-title">Programas abertos</h3><div class="card-subtitle" id="process-count">${list.length} de ${all.length} itens informados pelo agente Windows</div></div>
+    const total=Number(model.processes.totalCount)||all.length;
+    return `<section class="card pad"><div class="card-heading"><div><h3 class="card-title">Programas e processos em execução</h3><div class="card-subtitle" id="process-count">${list.length} de ${total} processos · janelas abertas aparecem primeiro</div></div>
       ${button('refreshProcesses','Atualizar','refresh','xs ghost')}</div>
       <div class="filter-row"><input id="process-filter" class="input" value="${esc(model.processQuery)}" placeholder="Buscar por nome ou PID" aria-label="Buscar processo"></div>
-      <div class="table-scroll"><table class="table"><thead><tr><th>Nome</th><th>PID</th><th>Memória</th><th>Estado</th></tr></thead><tbody>${all.map(p=>{const search=String(p.name||'').toLocaleLowerCase('pt-BR')+' '+p.pid;return `<tr data-process="${esc(search)}" ${query&&!search.includes(query)?'hidden':''}><td>${esc(p.name)}</td><td class="muted number">${esc(p.pid)}</td><td>${bytes(p.memoryBytes)}</td><td>${badge('Em execução')}</td></tr>`;}).join('')}</tbody></table></div><p id="process-empty" class="muted small" ${list.length?'hidden':''}>Nenhum programa corresponde à busca.</p></section>`;
+      ${model.processes.truncated?'<p class="muted small">Mostrando os 300 processos mais relevantes, ordenados com janelas abertas e maior uso de memória primeiro.</p>':''}
+      <div class="table-scroll"><table class="table"><thead><tr><th>Nome</th><th>PID</th><th>Memória</th><th>Estado</th></tr></thead><tbody>${all.map(p=>{const search=String(p.name||'').toLocaleLowerCase('pt-BR')+' '+p.pid;return `<tr data-process="${esc(search)}" ${query&&!search.includes(query)?'hidden':''}><td>${esc(p.name)}</td><td class="muted number">${esc(p.pid)}</td><td>${bytes(p.memoryBytes)}</td><td>${p.windowOpen?badge('Janela aberta'):badge('Em execução')}</td></tr>`;}).join('')}</tbody></table></div><p id="process-empty" class="muted small" ${list.length?'hidden':''}>Nenhum processo corresponde à busca.</p></section>`;
   }
   function processes(){
     return `${heading('Processos','Programas em execução informados pelo agente Windows.',button('refreshProcesses','Atualizar programas','refresh'))}${processContent()}${footer()}`;
@@ -239,7 +241,7 @@
   function activity(){
     return `${heading('Atividade','Os últimos eventos registrados neste dispositivo.',button('refresh','Atualizar','refresh')+button('clearLogs','Limpar histórico','x','ghost'))}
       <section class="card pad"><div class="filter-pills">${[['all','Todas'],['good','Sucesso'],['info','Comandos'],['warn','Avisos']].map(p=>`<button class="btn xs ${model.activityFilter===p[0]?'active':''}" data-filter="${p[0]}">${p[1]}</button>`).join('')}</div>${events()}</section>
-      <section class="card pad status-summary"><h3 class="card-title">Resumo do serviço</h3><dl class="kv"><dt>Bot Telegram</dt><dd>${statusLabel()}</dd><dt>PC monitorado</dt><dd>${pcOnline()?'Ligado':'Sem confirmação'}</dd><dt>Dispositivo</dt><dd>${model.state.hasAgentToken?'Pareado':'Não pareado'}</dd><dt>Eventos locais</dt><dd>${(model.state.events||[]).length}</dd></dl></section>${footer()}`;
+      <section class="card pad status-summary"><h3 class="card-title">Resumo do serviço</h3><dl class="kv"><dt>Bot Telegram</dt><dd>${statusLabel()}</dd><dt>Detalhe</dt><dd>${esc(model.state.detail||'—')}</dd><dt>Último contato</dt><dd>${model.state.lastContactAt?new Date(model.state.lastContactAt).toLocaleString('pt-BR'):'Ainda sem contato confirmado'}</dd><dt>PC monitorado</dt><dd>${pcOnline()?'Ligado':'Sem confirmação'}</dd><dt>Dispositivo</dt><dd>${model.state.hasAgentToken?'Pareado':'Não pareado'}</dd><dt>Eventos locais</dt><dd>${(model.state.events||[]).length}</dd></dl></section>${footer()}`;
   }
   function pairing(){
     const s=model.state;
@@ -383,7 +385,7 @@
     if(id==='process-filter'){
       model.processQuery=event.target.value;
       let shown=0;document.querySelectorAll('[data-process]').forEach(n=>{n.hidden=!n.dataset.process.includes(query);if(!n.hidden)shown++;});
-      if(el('process-count'))el('process-count').textContent=shown+' de '+(model.processes?.processes||[]).length+' itens informados pelo agente Windows';
+      if(el('process-count'))el('process-count').textContent=shown+' de '+(model.processes?.totalCount||(model.processes?.processes||[]).length)+' processos · janelas abertas aparecem primeiro';
       if(el('process-empty'))el('process-empty').hidden=shown>0;
     }
     if(id==='installed-filter'){

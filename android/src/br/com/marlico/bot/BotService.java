@@ -119,8 +119,8 @@ public final class BotService extends Service {
     private void loop(Config cfg) {
         int failures=0,conflicts=0;boolean initialized=false;long offset=0;
         String nonce=UUID.randomUUID().toString().substring(0,12);
-        Set<Long> allowed=Core.users(cfg.users);
         try {
+            Set<Long> allowed=Core.users(cfg.users);
             while(alive) {
                 try {
                     if(AppUpdates.required(this))report("error","Atualização obrigatória: use /atualizar ou abra o aplicativo.");
@@ -142,6 +142,7 @@ public final class BotService extends Service {
                     if(!AppUpdates.required(this))report("online","Seu bot está pronto para receber comandos.");
                     failures=0;
                     Config.prefs(this).edit().putLong("lastContact",System.currentTimeMillis()).apply();
+                    conflicts=0;
                     for(int i=0;i<updates.length()&&alive;i++) {
                         JSONObject u=updates.getJSONObject(i);offset=u.getLong("update_id")+1;
                         // A command is consumed once, even if the reply fails after sending WOL.
@@ -155,8 +156,10 @@ public final class BotService extends Service {
                     if(e.code==401||e.code==404){fatal("Token inválido ou revogado. Importe o .env atualizado nas configurações.");break;}
                     if(e.code==409) {
                         conflicts++;
-                        if(conflicts>=3){fatal("Outra cópia está usando este bot. Pare o bot no Termux e no PC; depois toque em Conectar.");break;}
-                        report("retry","Outra cópia do bot está conectada. Feche o bot no Termux e no PC.");event(this,"warn","Conflito no Telegram: aguardando a outra sessão encerrar.");pause(35);
+                        int delay=Math.min(60,5*(1<<Math.min(conflicts-1,4)));
+                        report("retry","O Telegram detectou outra cópia do bot (HTTP 409). Feche o bot em outros aparelhos/Termux; esta TV Box tentará novamente em "+delay+"s.");
+                        if(conflicts==1)event(this,"warn","Conflito no Telegram: outra cópia está usando o mesmo token. A TV Box continuará tentando reconectar.");
+                        pause(delay);
                     } else { int delay=e.code==429?Math.max(5,Math.min(e.retry,3600)):Math.min(60,5*(1<<Math.min(failures++,3)));report("retry","Telegram indisponível. Tentando reconectar automaticamente…");pause(delay); }
                 } catch(Exception e) {
                     if(!alive)break;
@@ -168,7 +171,9 @@ public final class BotService extends Service {
                     pause(delay);
                 }
             }
-        } finally { if(alive){alive=false;stopSelf();} }
+        } finally {
+            if(alive){alive=false;if(Config.prefs(this).getBoolean("enabled",false)){Config.prefs(this).edit().putBoolean("enabled",false).apply();status(this,"error","O serviço Telegram parou inesperadamente. Toque em Conectar bot para reiniciar.");event(this,"warn","O serviço Telegram foi encerrado e precisa ser reiniciado manualmente.");}stopSelf();}
+        }
     }
     private void fatal(String text) {report("error",text);event(this,"warn",text);Config.prefs(this).edit().putBoolean("enabled",false).apply();}
     private void pause(int seconds) {try{Thread.sleep(seconds*1000L);}catch(InterruptedException e){Thread.currentThread().interrupt();alive=false;}}

@@ -8,9 +8,9 @@ Os instaladores serão publicados em [Releases](https://github.com/marlico77/bot
 
 A versão 1.3.6 leva o novo painel ao Android e à TV Box: navegação responsiva, gráficos de leituras reais, busca de processos e programas, filtros de atividade, seleção de monitor, zoom e tela ampliada. O app guarda o IP local e o IP Tailscale em campos separados e escolhe a rota conforme a rede. O agente Windows informa a resolução de cada monitor e o estado da permissão de captura sem supervisão. Os pacotes são gerados em dist; a publicação em Releases é separada do commit de código.
 
-No Android 1.3.9, Configurações mostra um QR temporário para preencher no celular as credenciais do bot, a rede e o pareamento do PC. A câmera do celular abre o MarlicoBot para importar os dados, que expiram após cinco minutos. A tela Atividade também mostra os processos abertos do Windows. O Android é build 21; o agente Windows 1.3.7 é build 9 e tenta obter uso da GPU pelos contadores AMD/Windows quando a classe CIM formatada não está disponível.
+No Android 1.4.1 (build 23), a tela de atividade mostra o estado detalhado do Telegram e o horário do último contato confirmado. Conflitos temporários de polling são tratados com reconexão automática e espera crescente. O agente Windows 1.3.8 (build 10) exibe processos com janela aberta primeiro e inclui PID, memória e estado; a leitura da GPU AMD mantém a última amostra válida quando o driver não responde a tempo.
 
-O Android 1.4.0 (build 22) inclui uma ponte remota privada pela TV Box. Celular e TV Box entram na mesma rede Tailscale; a Box encaminha somente as rotas permitidas ao PC pela LAN. O listener usa apenas o IP Tailscale da Box na porta 8766 e não requer encaminhamento de portas no roteador. O PC não precisa participar do Tailscale para essa rota.
+O Android 1.4.1 mantém a ponte remota privada pela TV Box. Celular e TV Box entram na mesma rede Tailscale; a Box encaminha somente as rotas permitidas ao PC pela LAN. O listener usa apenas o IP Tailscale da Box na porta 8766 e não requer encaminhamento de portas no roteador. O PC não precisa participar do Tailscale para essa rota.
 
 ## Atualizações pelo aplicativo
 

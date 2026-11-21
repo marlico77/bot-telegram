@@ -14,8 +14,10 @@ public final class TelegramApi {
     public static class ApiException extends IOException {
         public final int code, retry;
         public final boolean unchanged;
-        ApiException(int c,int r) { this(c,r,false); }
-        ApiException(int c,int r,boolean same) { super("Telegram HTTP "+c);code=c;retry=r;unchanged=same; }
+        public final String description;
+        ApiException(int c,int r) { this(c,r,false,""); }
+        ApiException(int c,int r,boolean same) { this(c,r,same,""); }
+        ApiException(int c,int r,boolean same,String detail) { super("Telegram HTTP "+c);code=c;retry=r;unchanged=same;description=detail==null?"":detail; }
     }
     public JSONObject call(String method,JSONObject body) throws Exception {
         if(cancelled) throw new InterruptedIOException();
@@ -34,7 +36,8 @@ public final class TelegramApi {
             JSONObject result=new JSONObject(buffer.toString("UTF-8"));
             if(status>=400||!result.optBoolean("ok")) {
                 JSONObject params=result.optJSONObject("parameters");
-                throw new ApiException(result.optInt("error_code",status),params==null?0:params.optInt("retry_after",0),result.optString("description","").contains("message is not modified"));
+                String description=result.optString("description","");
+                throw new ApiException(result.optInt("error_code",status),params==null?0:params.optInt("retry_after",0),description.contains("message is not modified"),description);
             }
             return result;
         } finally { c.disconnect(); active=null; }
